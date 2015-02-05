@@ -13,6 +13,8 @@ https://github.com/ytakano/libcage
 
 https://github.com/bmuller/kademlia
 
+NOTE: This Python library requires the python-dev package to run. On Ubuntu based systems you can run: sudo apt-get install python-dev -y to install it. Then follow the instructions in the Kademila docs.
+
 https://twistedmatrix.com/trac/
 
 http://findingscience.com/python/kademlia/dht/2014/02/14/kademlia:-a-dht-in-python.html
