@@ -41,7 +41,7 @@ server.listen(port)
 if os.path.isfile(backup):
     server.loadState(backup)
 # Backup every 5 minutes
-server.saveStateRegularly(backup)
+server.saveStateRegularly(backup, 300)
 
 # The addCallback can be added to many of the server functions, and can be used to chain call functions
 server.bootstrap(known_nodes).addCallback(set, server)
