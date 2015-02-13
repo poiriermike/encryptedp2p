@@ -1,7 +1,7 @@
 from twisted.internet import reactor
 from twisted.python import log
 from kademlia.network import Server
-import sys
+import sys,os
 
 # This is a simple node on the network.
 
@@ -10,6 +10,7 @@ port = 5050
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
 # implement it how we were discussing last week.
 known_nodes = [(("127.0.0.1", 6060))]
+backup = "clientfiles/state.bak"
 
 #Logging
 log.startLogging(sys.stdout)
@@ -36,6 +37,11 @@ def set(stuff, morestuff):
 print("Setting up listening server")
 server = Server()
 server.listen(port)
+
+if os.path.isfile(backup):
+    server.loadState(backup)
+# Backup every 5 minutes
+server.saveStateRegularly(backup)
 
 # The addCallback can be added to many of the server functions, and can be used to chain call functions
 server.bootstrap(known_nodes).addCallback(set, server)
