@@ -1,6 +1,5 @@
 from fabric.api import env, run, put, get
 from fabric.decorators import roles, runs_once, parallel
-import re
 
 # HOSTS WILL NEED TO BE CHANGED FOR NEW GENI INSTANCES!!!
 env.hosts = [
@@ -64,6 +63,12 @@ def pingtest():
     run('ping -c 3 www.yahoo.com')
 
 @parallel
+def install_packages():
+    run("apt-get update -y")
+    run("apt-get install python-dev python-pip -y")
+    run("pip install kademlia")
+
+@parallel
 def get_ip():
     run("ifconfig | grep \"inet addr\" > myip.txt")
     get('myip.txt')
@@ -74,6 +79,7 @@ def upload_neighbours():
     Upload the neighbours.txt file after condense.py has been run
     """
     put(env.host_string + "/neighbours.txt")
+
 @parallel
 @roles('clients')
 def upload_client():
