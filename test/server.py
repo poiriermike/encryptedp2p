@@ -12,12 +12,17 @@ backup = "serverfiles/state.bak"
 # Some fancy argument parsing. cause I'm cool like that.
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--port', dest='port', type=int, required=True, action='store', help='Port to start the server on. Defaults to 6060.')
-
+parser.add_argument('-l', '--log', dest='log', type=str, action='store', default=False, help='Specify a log file to output to. Default is stdout.')
 args = parser.parse_args()
 
 
 # Logging and fun stuff like that
-log.startLogging(sys.stdout)
+if args.log:
+    # NOTE: This works, however I am unsure if the logging function will close the file descriptor when the server finishes.
+    l = open(args.log, "a")
+    log.startLogging(l)
+else:
+    log.startLogging(sys.stdout)
 
 print("Setting up listening server")
 server = Server()

@@ -10,12 +10,12 @@ port = 5050
 # Some fancy argument parsing. cause I'm cool like that.
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--file', dest='file', type=str, required=True, action='store', help='File with a list of known hosts.')
-
+parser.add_argument('-l', '--log', dest='log', type=str, action='store', default=False, help='Specify a log file to output to. Default is stdout.')
 args = parser.parse_args()
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
 # implement it how we were discussing last week.
-known_nodes = [(("10.0.0.238", 6060))]
+known_nodes = [(("10.0.0.238", 5050))]
 
 if os.path.isfile(args.file):
     known_nodes = []
@@ -27,7 +27,13 @@ if os.path.isfile(args.file):
 backup = "clientfiles/state.bak"
 
 #Logging
-log.startLogging(sys.stdout)
+# Logging and fun stuff like that
+if args.log:
+    # NOTE: This works, however I am unsure if the logging function will close the file descriptor when the server finishes.
+    l = open(args.log, "a")
+    log.startLogging(l)
+else:
+    log.startLogging(sys.stdout)
 
 def print_result(result):
     print("Value found=" + str(result))
@@ -54,6 +60,7 @@ server.listen(port)
 
 if os.path.isfile(backup):
     server.loadState(backup)
+
 # Backup every 5 minutes
 server.saveStateRegularly(backup, 300)
 
