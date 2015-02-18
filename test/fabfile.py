@@ -8,7 +8,7 @@ env.hosts = [
     "slice313.pcvm3-1.instageni.metrodatacenter.com",
     "slice313.pcvm2-2.instageni.rnoc.gatech.edu",
     "slice313.pcvm3-2.instageni.illinois.edu",
-    "slice313.pcvm5-7.lan.sdn.uky.edu",
+    #"slice313.pcvm5-7.lan.sdn.uky.edu",
     "slice313.pcvm3-1.instageni.lsu.edu",
     "slice313.pcvm2-2.instageni.maxgigapop.net",
     "slice313.pcvm1-1.instageni.iu.edu",
@@ -36,7 +36,7 @@ env.roledefs.update({
 "slice313.pcvm3-1.instageni.metrodatacenter.com",
 "slice313.pcvm2-2.instageni.rnoc.gatech.edu",
 "slice313.pcvm3-2.instageni.illinois.edu",
-"slice313.pcvm5-7.lan.sdn.uky.edu",
+#"slice313.pcvm5-7.lan.sdn.uky.edu",
 "slice313.pcvm3-1.instageni.lsu.edu",
 "slice313.pcvm2-2.instageni.maxgigapop.net",
 "slice313.pcvm1-1.instageni.iu.edu",
@@ -91,7 +91,20 @@ def upload_server():
 
 @roles('server')
 def run_server():
-    run("python server.py -p 6060")
+    run("python server.py -p 5050")
+
+@roles('server')
+def kill_server():
+    run("killall -9 python")
+
+@parallel
+def upload_hosts():
+    put("hosts.txt")
+
+@parallel
+@roles('clients')
+def kill_clients():
+    run("killall -9 python")
 
 @roles('clients')
 @parallel
