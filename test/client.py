@@ -1,7 +1,10 @@
+import sys,os,socket,argparse
+# Uses local version of Kademlia
+sys.path.insert(0,"../kademlia")
 from twisted.internet import reactor
 from twisted.python import log
 from kademlia.network import Server
-import sys,os,socket,argparse
+
 
 # This is a simple node on the network.
 
