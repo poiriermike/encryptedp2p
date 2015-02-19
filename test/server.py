@@ -1,7 +1,9 @@
+import sys, os
+# Uses local version of Kademlia
+sys.path.insert(0,"../kademlia")
 from twisted.internet import reactor
 from twisted.python import log
 from kademlia.network import Server
-import sys, os
 import argparse
 
 # This is a really simple dedicated server. It will start on the specified port, load state variables from a file, and
