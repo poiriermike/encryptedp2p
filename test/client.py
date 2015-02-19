@@ -9,7 +9,7 @@ port = 5050
 
 # Some fancy argument parsing. cause I'm cool like that.
 parser = argparse.ArgumentParser()
-parser.add_argument('-f', '--file', dest='file', type=str, required=True, action='store', help='File with a list of known hosts.')
+parser.add_argument('-f', '--file', dest='file', type=str, action='store', help='File with a list of known hosts.')
 parser.add_argument('-l', '--log', dest='log', type=str, action='store', default=False, help='Specify a log file to output to. Default is stdout.')
 args = parser.parse_args()
 
@@ -17,11 +17,12 @@ args = parser.parse_args()
 # implement it how we were discussing last week.
 known_nodes = [(("10.0.0.238", 5050))]
 
-if os.path.isfile(args.file):
-    known_nodes = []
-    with open(args.file, "r") as f:
-        for line in f:
-            known_nodes.append((line.split()[0], port))
+if args.file:
+    if os.path.isfile(args.file):
+        known_nodes = []
+        with open(args.file, "r") as f:
+            for line in f:
+                known_nodes.append((line.split()[0], port))
 
 
 backup = "clientfiles/state.bak"
@@ -70,4 +71,7 @@ server.bootstrap(known_nodes).addCallback(set, server)
 # starts the execution of the server code
 reactor.run()
 
+# Anything after the run command will run after a ctrl+c is given and the server is closed gracefully
 
+if args.log:
+    l.close()
