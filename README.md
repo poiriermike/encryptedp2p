@@ -1,6 +1,31 @@
 # encryptedp2p
 
+README
 
+PROJECT DESCRIPTION
+
+a description of the following:
+the structure of your code, including any major interfaces you implemented
+(for example, in the 2PC project, the RPC interface your replicas expose to the coordinator)
+
+how you handle failures
+(for example, in the 2PC project, how are failures reflected to clients via the RPC interface that the coordinator exposes, if at all)
+
+the test cases you explored, and why you picked those, along with test cases you would do if you had more time!
+----------------------------------------------------------------------------------------------------------------------------
+
+RUN INSTRUCTIONS
+
+-Setup-
+Ensure Python is installed. Version 2.7 works if 3.4 does not
+Install python -dev library. This can be done on linux using 'sudo apt-get install python-dev'
+Copy our code to a run directory
+
+-Run-
+run 'python client.py'
+run 'python server.py -p 5050'
+
+----------------------------------------------------------------------------------------------------------------------------
 This is a readme file. Things will go here eventually. Muahahahaha.
 
 Here is a list of potential software choices for a DHT as well as the popular algorithm that BitTorrent and many other P2P protocols use.
