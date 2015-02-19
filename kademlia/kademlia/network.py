@@ -65,8 +65,8 @@ class Server(object):
         def republishKeys(_):
             ds = []
             # Republish keys older than one hour
-            for key, value in self.storage.iteritemsOlderThan(3600):
-                ds.append(self.set(key, value))
+            for key, value, timestamp in self.storage.iteritemsOlderThan(3600):
+                ds.append(self.set(key, value, timestamp))
             return defer.gatherResults(ds)
 
         return defer.gatherResults(ds).addCallback(republishKeys)
@@ -141,16 +141,16 @@ class Server(object):
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find()
 
-    def set(self, key, value):
+    def set(self, key, value, timestamp=None):
         """
         Set the given key to the given value in the network.
         """
-        self.log.debug("setting '%s' = '%s' on network" % (key, value))
+        self.log.debug("setting '%s' = '%s' on network with timestamp '%s'" % (key, value, timestamp))
         dkey = digest(key)
 
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
-            ds = [self.protocol.callStore(node, dkey, value) for node in nodes]
+            ds = [self.protocol.callStore(node, dkey, (value, timestamp)) for node in nodes]
             return defer.DeferredList(ds).addCallback(self._anyRespondSuccess)
 
         node = Node(dkey)
