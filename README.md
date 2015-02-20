@@ -4,28 +4,47 @@ README
 
 PROJECT DESCRIPTION
 
-a description of the following:
-the structure of your code, including any major interfaces you implemented
-(for example, in the 2PC project, the RPC interface your replicas expose to the coordinator)
+The goal of our project is to build a decentralized peer to peer chat system. This means a system which does not rely on any single server in order to work. Our focus for the first phase of this project is to use a distributed hash table system to keep track of live notes across the network. The hash table will allow network nodes (eventually chat system users) to find each other on the network and setup a direct connection.
 
-how you handle failures
-(for example, in the 2PC project, how are failures reflected to clients via the RPC interface that the coordinator exposes, if at all)
 
-the test cases you explored, and why you picked those, along with test cases you would do if you had more time!
+
+-Code Structure-
+
+the structure of your code, including any major interfaces you implemented 
+for example, in the 2PC project, the RPC interface your replicas expose to the coordinator
+
+-Failure Cases-
+
+How do we handle failure cases? We don't, the library uses black magic to ensure success. Also, it does //TODO, but mostly the black magic.
+
+for example, in the 2PC project, how are failures reflected to clients via the RPC interface that the coordinator exposes, if at all the test cases you explored, and why you picked those, along with test cases you would do if you had more time.
+
 ----------------------------------------------------------------------------------------------------------------------------
 
 RUN INSTRUCTIONS
 
 -Setup-
+
 Ensure Python is installed. Version 2.7 works if 3.4 does not
-Install python -dev library. This can be done on linux using 'sudo apt-get install python-dev'
+
+Install python -dev library. This can be done on linux using 'sudo apt-get install python-dev -y'
+
+Install Twisted. do this using 'sudo pip install twisted'
+
+Run this because reasons 'sudo pip install rpcudp'
+
 Copy our code to a run directory
 
+
 -Run-
+
 run 'python client.py'
+
 run 'python server.py -p 5050'
 
 ----------------------------------------------------------------------------------------------------------------------------
+OTHER STUFF
+
 This is a readme file. Things will go here eventually. Muahahahaha.
 
 Here is a list of potential software choices for a DHT as well as the popular algorithm that BitTorrent and many other P2P protocols use.
