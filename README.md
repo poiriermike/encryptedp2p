@@ -4,12 +4,18 @@ README
 
 PROJECT DESCRIPTION
 
-a description of the following:
+The goal of our project is to build a decentralized peer to peer chat system. This means a system which does not rely on any single server in order to work. Our focus for the first phase of this project is to use a distributed hash table system to keep track of live notes across the network. The hash table will allow network nodes (eventually chat system users) to find each other on the network and setup a direct connection.
+
+
+
+-Code Structure-
 
 the structure of your code, including any major interfaces you implemented 
 for example, in the 2PC project, the RPC interface your replicas expose to the coordinator
 
-how you handle failures 
+-Failure Cases-
+
+How do we handle failure cases? We don't, the library uses black magic to ensure success. Also, it does //TODO, but mostly the black magic.
 
 for example, in the 2PC project, how are failures reflected to clients via the RPC interface that the coordinator exposes, if at all the test cases you explored, and why you picked those, along with test cases you would do if you had more time.
 
