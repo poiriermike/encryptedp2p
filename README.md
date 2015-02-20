@@ -10,12 +10,11 @@ The goal of our project is to build a decentralized peer to peer chat system. Th
 
 -Code Structure-
 
-the structure of your code, including any major interfaces you implemented 
-for example, in the 2PC project, the RPC interface your replicas expose to the coordinator
+Originally we had though to build our own distributed hash table, but that was apparently 'insane' or something, so we decided to use an existing implementation. All of out code is based off of the kademlia library. However, we decided to modify it a bit in an attempt to fix a potential table poisioning issue (more on this later). We added a timestamp and logical clock features to the the table entries. The majority of our code is for ensuring that the library is able to run correctly, and to prevent failure of the system.
 
 -Failure Cases-
 
-How do we handle failure cases? We don't, the library uses black magic to ensure success. Also, it does //TODO, but mostly the black magic.
+How do we handle failure cases? We don't, the kademlia library uses black magic to ensure success. Also, it does //TODO, but mostly the black magic.
 
 for example, in the 2PC project, how are failures reflected to clients via the RPC interface that the coordinator exposes, if at all the test cases you explored, and why you picked those, along with test cases you would do if you had more time.
 
