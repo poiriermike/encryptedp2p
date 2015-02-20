@@ -1,6 +1,6 @@
 import sys, os
 # Uses local version of Kademlia
-sys.path.insert(0,"../kademlia")
+sys.path.insert(0, "../kademlia")
 from twisted.internet import reactor
 from twisted.python import log
 from kademlia.network import Server
@@ -37,7 +37,7 @@ if os.path.isfile(backup):
 # Saves to a backup every 5 minutes
 #TODO: This should be changed to create the directory and file instead
 if os.path.exists(backup):
-server.saveStateRegularly(backup, 300)
+    server.saveStateRegularly(backup, 300)
 
 
 reactor.run()
