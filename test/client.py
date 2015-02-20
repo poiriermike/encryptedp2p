@@ -1,6 +1,6 @@
 import sys,os,socket,argparse
 # Uses local version of Kademlia
-sys.path.insert(0,"../kademlia")
+sys.path.insert(0, "../kademlia")
 from twisted.internet import reactor
 from twisted.python import log
 from kademlia.network import Server
@@ -66,7 +66,9 @@ if os.path.isfile(backup):
     server.loadState(backup)
 
 # Backup every 5 minutes
-server.saveStateRegularly(backup, 300)
+#TODO: This should be changed to create the directory and file instead
+if os.path.exists(backup):
+    server.saveStateRegularly(backup, 300)
 
 # The addCallback can be added to many of the server functions, and can be used to chain call functions
 server.bootstrap(known_nodes).addCallback(set, server)
