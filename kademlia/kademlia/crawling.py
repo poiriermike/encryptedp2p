@@ -111,6 +111,8 @@ class ValueSpiderCrawl(SpiderCrawl):
             args = (self.node.long_id, str(values))
             self.log.warning("Got multiple values for key %i: %s" % args)
         value = sorted(values, key=lambda y: y[1])[-1:]
+        if value != None:
+            value = sorted(values, key=lambda y: y[1])[-1]
         #value = valueCounts.most_common(1)[0][0]
 
         peerToSaveTo = self.nearestWithoutValue.popleft()
