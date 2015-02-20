@@ -35,6 +35,8 @@ if os.path.isfile(backup):
     server.loadState(backup)
 
 # Saves to a backup every 5 minutes
+#TODO: This should be changed to create the directory and file instead
+if os.path.exists(backup):
 server.saveStateRegularly(backup, 300)
 
 
