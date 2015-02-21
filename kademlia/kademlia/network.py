@@ -141,11 +141,17 @@ class Server(object):
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find()
 
-    def set(self, key, value, timestamp=None):
-        """
-        Set the given key to the given value in the network.
-        """
-        self.log.debug("setting '%s' = '%s' on network with timestamp '%s'" % (key, value, timestamp))
+    def _setWithTimestamp(self, existingValue, key, value, requestedTimeStamp):
+        self.log.debug("Existing value: %s" % str(existingValue))
+        if requestedTimeStamp is None:
+            if existingValue:
+                timestamp = existingValue[1] + 1
+            else:
+                timestamp = 0
+        else:
+            timestamp = requestedTimeStamp
+
+        self.log.debug("setting '%s' = '%s' on network with incremented timestamp '%s'" % (key, value, timestamp))
         dkey = digest(key)
 
         def store(nodes):
@@ -160,6 +166,17 @@ class Server(object):
             return defer.succeed(False)
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find().addCallback(store)
+
+    def set(self, key, value, timestamp=None):
+        """
+        Set the given key to the given value in the network. A timestamp will be automatically generated if one is not
+        supplied. Values will only be accepted by the hash table if their timestamps are larger than the existing values.
+        """
+        self.log.debug("Checking+setting '%s' = '%s' on network with timestamp '%s'" % (key, value, timestamp))
+        if timestamp is None:
+            return self.get(key).addCallback(self._setWithTimestamp, key=key, value=value, requestedTimeStamp=None)
+        else:
+            return self._setWithTimestamp(existingValue=None, key=key, value=value, requestedTimeStamp=timestamp)
 
     def _anyRespondSuccess(self, responses):
         """
