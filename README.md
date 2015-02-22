@@ -12,6 +12,14 @@ The goal of our project is to build a decentralized peer to peer chat system. Th
 
 Originally we had though to build our own distributed hash table, but that was apparently 'insane' or something, so we decided to use an existing implementation. All of out code is based off of the kademlia library. However, we decided to modify it a bit in an attempt to fix a potential table poisioning issue (more on this later). We added a timestamp and logical clock features to the the table entries. The majority of our code is for ensuring that the library is able to run correctly, and to prevent failure of the system.
 
+-Modifications to the existing kademlia library
+
+The kademlia distributed hash table relies on fairly stable nodes. For a chat system it is quite likely that nodes (chat clients) will be starting and stopping quite often, and the network connecting them may be unstable. As an example a user running the client on a laptop may move away from a wi-fi hotspot which disconnects them from the network. When a node becomes disconnected from the network it can no longer update values to the hash table or be updated. Once it reconnects it may be storing stale values, or have new values which need to be pushed into the table. We added a timestamp to every value stored in the hash table so that the newest values are used if there is any conflict. A single new value will over-ride a large number of old values when the table is queried.
+
+The timestamps start at zero and are incremented each time the value is updated. To do this the library will check the current timestamp of the key in the table by accessing the hash table normally, if there is no value stored it will start from zero, otherwise it will increment by one. This will likely decrease the performance of the set() method but any delay here is inherent in the nature of the distributed hash table and will affect the entire program. If the delay is an issue it will have to be solved for the entire program.
+
+Due to the rapidly chaning nature of the network clients must push their data onto the table fairly regularly, currently we imagine this should happen roughly every five minutes. This puts an upper limit on the time a user will have access to bad data.
+
 -Failure Cases-
 
 How do we handle failure cases? We don't, the kademlia library uses black magic to ensure success. Also, it does //TODO, but mostly the black magic.
