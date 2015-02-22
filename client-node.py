@@ -24,7 +24,7 @@ args = parser.parse_args()
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
 # implement it how we were discussing last week.
-known_nodes = [(("127.0.0.1", 5050))]
+known_nodes = [("127.0.0.1", 5050)]
 
 if args.bootstrap:
     if not args.bsip or not args.bsport:
@@ -50,13 +50,9 @@ if args.file:
                 else:
                     print("Warning. '" + line + "' is not a valid ip/port pair")
 
-
-
-
 #Logging
 # Logging and fun stuff like that
 if args.log:
-    # NOTE: This works, however I am unsure if the logging function will close the file descriptor when the server finishes.
     l = open(args.log, "a")
     log.startLogging(l)
 else:
@@ -71,6 +67,7 @@ def get(result, server):
     # value
     server.get(socket.gethostname()).addCallback(print_result)
 
+# Sets the value of the hostname to it's IP address according to the other nodes in the network
 def set(stuff, server):
     print("STUFF " + str(stuff))
     server.set(socket.gethostname(), stuff).addCallback(get, server)
@@ -89,9 +86,8 @@ server.listen(int(args.port))
 if os.path.isfile(backup):
     server.loadState(backup)
 
-# Backup every 5 minutes
-#TODO: This should be changed to create the directory and file instead
 if args.save:
+    # Backup every 5 minutes
     if os.path.exists(backup):
         server.saveStateRegularly(backup, 300)
 
@@ -102,6 +98,5 @@ server.bootstrap(known_nodes).addCallback(getIPs, server)
 reactor.run()
 
 # Anything after the run command will run after a ctrl+c is given and the server is closed gracefully
-
 if args.log:
     l.close()
