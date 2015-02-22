@@ -31,6 +31,10 @@ for example, in the 2PC project, how are failures reflected to clients via the R
 RUN INSTRUCTIONS
 
 -Setup-
+For each computer in the network do the following.
+We reccoment using fabric to run all these instructions in parellel on all the nodes.
+
+Note: ensure that apt-get is up to date (run 'apt-get update')
 
 Ensure Python is installed. Version 2.7 works if 3.4 does not
 
@@ -40,14 +44,14 @@ Install Twisted. do this using 'sudo pip install twisted'
 
 Run this because reasons 'sudo pip install rpcudp'
 
-Copy our code to a run directory
-
+Copy our code to a run directory:
+Specifically, client.py, server.py, and the kademelia folder from our github repository.
 
 -Run-
 
-run 'python client.py'
+run 'python client.py' on each network node.
 
-run 'python server.py -p 5050'
+run 'python server.py -p 5050' on at least one network node.
 
 ----------------------------------------------------------------------------------------------------------------------------
 OTHER STUFF
