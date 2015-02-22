@@ -38,9 +38,15 @@ class KademliaProtocol(RPCProtocol):
     def rpc_store(self, sender, nodeid, key, value):
         source = Node(nodeid, sender[0], sender[1])
         self.router.addContact(source)
-        self.log.debug("got a store request from %s, storing value" % str(sender))
-        self.storage[key] = value
-        return True
+        #Check if the timestamp of any existing value is larger than the new one.
+        existingValue = self.storage.get(key, None)
+        if (not existingValue) or (existingValue[1] < value[1]):
+            self.log.debug("got a store request from %s, storing value" % str(sender))
+            self.storage[key] = value
+            return True
+        else:
+            self.log.debug("IGNORING a store request from %s, existing timestamp %s is larger than new %s" % (str(sender), str(existingValue[1]), str(value[1])))
+            return False
 
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))

@@ -106,11 +106,14 @@ class ValueSpiderCrawl(SpiderCrawl):
         make sure we tell the nearest node that *didn't* have
         the value to store it.
         """
-        valueCounts = Counter(values)
+        valueCounts = Counter([x[1] for x in values])
         if len(valueCounts) != 1:
             args = (self.node.long_id, str(values))
             self.log.warning("Got multiple values for key %i: %s" % args)
-        value = valueCounts.most_common(1)[0][0]
+        value = sorted(values, key=lambda y: y[1])[-1:]
+        if value != None:
+            value = sorted(values, key=lambda y: y[1])[-1]
+        #value = valueCounts.most_common(1)[0][0]
 
         peerToSaveTo = self.nearestWithoutValue.popleft()
         if peerToSaveTo is not None:

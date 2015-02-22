@@ -65,8 +65,8 @@ class Server(object):
         def republishKeys(_):
             ds = []
             # Republish keys older than one hour
-            for key, value in self.storage.iteritemsOlderThan(3600):
-                ds.append(self.set(key, value))
+            for key, value, timestamp in self.storage.iteritemsOlderThan(3600):
+                ds.append(self.set(key, value, timestamp))
             return defer.gatherResults(ds)
 
         return defer.gatherResults(ds).addCallback(republishKeys)
@@ -141,16 +141,31 @@ class Server(object):
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find()
 
-    def set(self, key, value):
+    def _setWithTimestamp(self, existingValue, key, value, requestedTimeStamp):
         """
-        Set the given key to the given value in the network.
+        Sends the command to store the key/value pair on all required nodes.
+        :param existingValue: The current (value,timestamp) associated with the key, if one exists.
+        :param key: The key to store the value under.
+        :param value: The value to store.
+        :param requestedTimeStamp: An explicit timestamp if desired, if None the existing timestamp will be
+        incremented by one.
         """
-        self.log.debug("setting '%s' = '%s' on network" % (key, value))
+        if requestedTimeStamp is None:
+            if existingValue:
+                timestamp = existingValue[1] + 1
+            else:
+                timestamp = 0
+
+            self.log.debug("setting '%s' = '%s' on network with automatic timestamp '%s'" % (key, value, timestamp))
+        else:
+            timestamp = requestedTimeStamp
+            self.log.debug("setting '%s' = '%s' on network with explicit timestamp '%s'" % (key, value, timestamp))
+
         dkey = digest(key)
 
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
-            ds = [self.protocol.callStore(node, dkey, value) for node in nodes]
+            ds = [self.protocol.callStore(node, dkey, (value, timestamp)) for node in nodes]
             return defer.DeferredList(ds).addCallback(self._anyRespondSuccess)
 
         node = Node(dkey)
@@ -160,6 +175,22 @@ class Server(object):
             return defer.succeed(False)
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find().addCallback(store)
+
+    def set(self, key, value, timestamp=None):
+        """
+        Set the given key to the given value in the network. A timestamp will be automatically generated if one is not
+        supplied. Values will only be accepted by the hash table if their timestamps are larger than the existing values.
+        :param key: The key to store the value under.
+        :param value: The value to store.
+        :param timestamp: Optional explicit timestamp, use None to auto set timestamp.
+        :return: True if the value was successfully updated in the table.
+        """
+        if timestamp is None:
+            self.log.debug("Checking for existing timestamp of '%s' on network before setting '%s'" % (value, key))
+            return self.get(key).addCallback(self._setWithTimestamp, key=key, value=value, requestedTimeStamp=None)
+        else:
+            self.log.debug("Preparing to set '%s' = '%s' with explicit timestamp '%s'" % (str(key), str(value), str(timestamp)))
+            return self._setWithTimestamp(existingValue=None, key=key, value=value, requestedTimeStamp=timestamp)
 
     def _anyRespondSuccess(self, responses):
         """
