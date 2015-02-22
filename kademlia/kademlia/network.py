@@ -142,16 +142,25 @@ class Server(object):
         return spider.find()
 
     def _setWithTimestamp(self, existingValue, key, value, requestedTimeStamp):
-        self.log.debug("Existing value: %s" % str(existingValue))
+        """
+        Sends the command to store the key/value pair on all required nodes.
+        :param existingValue: The current (value,timestamp) associated with the key, if one exists.
+        :param key: The key to store the value under.
+        :param value: The value to store.
+        :param requestedTimeStamp: An explicit timestamp if desired, if None the existing timestamp will be
+        incremented by one.
+        """
         if requestedTimeStamp is None:
             if existingValue:
                 timestamp = existingValue[1] + 1
             else:
                 timestamp = 0
+
+            self.log.debug("setting '%s' = '%s' on network with automatic timestamp '%s'" % (key, value, timestamp))
         else:
             timestamp = requestedTimeStamp
+            self.log.debug("setting '%s' = '%s' on network with explicit timestamp '%s'" % (key, value, timestamp))
 
-        self.log.debug("setting '%s' = '%s' on network with incremented timestamp '%s'" % (key, value, timestamp))
         dkey = digest(key)
 
         def store(nodes):
@@ -171,11 +180,16 @@ class Server(object):
         """
         Set the given key to the given value in the network. A timestamp will be automatically generated if one is not
         supplied. Values will only be accepted by the hash table if their timestamps are larger than the existing values.
+        :param key: The key to store the value under.
+        :param value: The value to store.
+        :param timestamp: Optional explicit timestamp, use None to auto set timestamp.
+        :return: True if the value was successfully updated in the table.
         """
-        self.log.debug("Checking+setting '%s' = '%s' on network with timestamp '%s'" % (key, value, timestamp))
         if timestamp is None:
+            self.log.debug("Checking for existing timestamp of '%s' on network before setting '%s'" % (value, key))
             return self.get(key).addCallback(self._setWithTimestamp, key=key, value=value, requestedTimeStamp=None)
         else:
+            self.log.debug("Preparing to set '%s' = '%s' with explicit timestamp '%s'" % (str(key), str(value), str(timestamp)))
             return self._setWithTimestamp(existingValue=None, key=key, value=value, requestedTimeStamp=timestamp)
 
     def _anyRespondSuccess(self, responses):
