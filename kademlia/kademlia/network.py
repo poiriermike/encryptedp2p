@@ -117,7 +117,7 @@ class Server(object):
             A `list` of IP's.  If no one can be contacted, then the `list` will be empty.
         """
         def handle(results):
-            ips = [ result[1][0] for result in results if result[0] ]
+            ips = [ (result[1][0],result[1][1]) for result in results if result[0] ]
             self.log.debug("other nodes think our ip is %s" % str(ips))
             return ips
 
