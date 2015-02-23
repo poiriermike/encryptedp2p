@@ -59,6 +59,10 @@ run 'python server.py -p 5050' on at least one network node.
 For the next part of the project. We plan to flesh our our modifications to Kademlia, build more robust test cases, test NAT traversal etc.
 
 
+The next steps for kademlia involve adding secure communications on top of the existing backend. Currently all information is stored as plain text which is not useful for a secure chat application. Any malicious client can currently overwrite key/value pairs through two ways. If the client knows a user's key they can set a new value for that user through normal means. If a malicious client does not have any users' keys they can check the keys stored on their local node and use those keys (although this is not useful for targeting a specific user it can still disrupt the system). There needs to be some way to stop these clients from pushing values with a larger sequence number to redirect traffic. Likely the easiest way to secure the tables is by using a difficult to determine key and encrypting the values. A malicious user will be able to set values in the table at random, but not target a specific user. The desired recipient will need both the key, and a way to decode the value. Using a public encryption key for both the table key and decypting the value would be easy but it means that any time a node stores a value the key can be compromized. 
+
+Stoping broad attacks against the table is much harder however. There needs to be some way to detect and stop malicious clients which are trying to push values onto the table for keys which belong to other clients. This is difficult since idealy the public key of a user should never be shared to the hash table, only directly between two users who wish to chat.
+
 After solidifying Kademlia, we will start building our P2P client on top of it. 
 
 
