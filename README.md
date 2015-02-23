@@ -62,11 +62,12 @@ For the next part of the project. We plan to flesh our our modifications to Kade
 After solidifying Kademlia, we will start building our P2P client on top of it. 
 
 
-
 A major stretch goal would be to build a Python GUI to create a "usable" client.
-Possible libraries we can use for an event given GUI would be Tkinter http://www.openbookproject.net/py4fun/gui/tkPhone.html
-or  wxPython
+Possible libraries we can use for an event given GUI would be Tkinter: http://www.openbookproject.net/py4fun/gui/tkPhone.html
+or  wxPython:
 http://www.openbookproject.net/py4fun/gui/wxPhone.html
+
+Here is a comprehensive list of GUIs that could work with Twisted: http://twistedmatrix.com/documents/13.2.0/core/howto/choosing-reactor.html
 
 
 
