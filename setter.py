@@ -7,7 +7,7 @@ from kademlia.network import Server
 log.startLogging(sys.stdout)
 
 if len(sys.argv) != 5:
-    print "Usage: python query.py <bootstrap ip> <bootstrap port> <key>"
+    print "Usage: python query.py <bootstrap ip> <bootstrap port> <key> <value>"
     sys.exit(1)
 
 ip = sys.argv[1]
