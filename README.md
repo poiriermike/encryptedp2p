@@ -54,6 +54,20 @@ run 'python client.py' on each network node.
 run 'python server.py -p 5050' on at least one network node.
 
 ----------------------------------------------------------------------------------------------------------------------------
+-The Future-
+
+For the next part of the project. We plan to flesh our our modifications to Kademlia, build more robust test cases, test NAT traversal etc.
+
+
+After solidifying Kademlia, we will start building our P2P client on top of it. 
+
+
+
+A major stretch goal would be to build a Python GUI to create a "usable" client.
+One possible library we can use for an event given GUI would be Tkinter http://www.openbookproject.net/py4fun/gui/tkPhone.html
+
+
+----------------------------------------------------------------------------------------------------------------------------
 OTHER STUFF
 
 This is a readme file. Things will go here eventually. Muahahahaha.
