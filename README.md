@@ -37,7 +37,7 @@ RUN INSTRUCTIONS
 -Setup-
 
 For each computer in the network do the following.
-We reccoment using fabric to run all these instructions in parellel on all the nodes.
+We recommend using fabric to run all these instructions in parallel on all the nodes.
 
 Note: ensure that apt-get is up to date (run 'apt-get update')
 
@@ -45,7 +45,7 @@ Ensure Python is installed. Version 2.7 works if 3.4 does not
 
 Install python -dev library. This can be done on linux using 'sudo apt-get install python-dev -y'
 
-Install Twisted. do this using 'sudo pip install twisted'
+Install Twisted. Do this using 'sudo pip install twisted'
 
 Run this because reasons 'sudo pip install rpcudp'
 
@@ -54,10 +54,10 @@ Specifically, client-node.py, dedicated-server.py, and the kademelia folder from
 
 -Run-
 
-run 'python dedicated-server.py -p 5050' on at least one network node.
+Run 'python dedicated-server.py -p 5050' on at least one network node.
 This starts a server meant to get the initial system running. After that, the client nodes should be able to connect to each other.
 
-run 'python client-node.py' on each network node.
+Run 'python client-node.py' on each network node.
 
 ----------------------------------------------------------------------------------------------------------------------------
 -The Future-
