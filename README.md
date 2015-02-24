@@ -10,7 +10,7 @@ The goal of our project is to build a decentralized peer to peer chat system. Th
 
 -Code Structure-
 
-Originally we had though to build our own distributed hash table, but that was apparently 'insane' or something, so we decided to use an existing implementation. All of our code is based off of the Kademlia library. However, we decided to modify it a bit in an attempt to fix a potential table poisioning issue (more on this later). We added a logical timestamp to the the table entries. The majority of our code is for ensuring that the library is able to run correctly, and to prevent failure of the system.
+Originally we had though to build our own distributed hash table, but that was apparently 'insane' or something, so we decided to use an existing implementation. All of our code is based off of the Kademlia library (a link has been provided at the bottom of the page). However, we decided to modify it a bit in an attempt to fix a potential table poisioning issue (more on this later). We added a logical timestamp to the the table entries. The majority of our code is for ensuring that the library is able to run correctly, and to prevent failure of the system.
 
 -Modifications to the existing Kademlia library
 
@@ -18,7 +18,7 @@ The Kademlia distributed hash table relies on fairly stable nodes. For a chat sy
 
 The timestamps start at zero and are incremented each time the value is updated. To do this the library will check the current timestamp of the key in the table by accessing the hash table normally, if there is no value stored it will start from zero, otherwise it will increment by one. This will likely decrease the performance of the set() method but any delay here is inherent in the nature of the distributed hash table and will affect the entire program. If the delay is an issue it will have to be solved for the entire program.
 
-Due to the rapidly chaning nature of the network clients must push their data onto the table fairly regularly, currently we imagine this should happen roughly every five minutes. This puts an upper limit on the time a user will have access to bad data.
+Due to the rapidly changing nature of the network clients must push their data onto the table fairly regularly, currently we imagine this should happen roughly every five minutes. This puts an upper limit on the time a user will have access to bad data.
 
 -Failure Cases-
 
@@ -48,7 +48,7 @@ Note: ensure that apt-get is up to date (run 'apt-get update')
 
 Ensure Python is installed. Version 2.7 works if 3.4 does not
 
-Install python -dev library. This can be done on linux using 'sudo apt-get install python-dev -y'
+Install python-dev library. This can be done on linux using 'sudo apt-get install python-dev -y'
 
 Install Twisted. Do this using 'sudo pip install twisted'
 
@@ -57,12 +57,14 @@ Run this because reasons 'sudo pip install rpcudp'
 Copy our code to a run directory:
 Specifically, client-node.py, dedicated-server.py, and the kademelia folder from our github repository.
 
+Make sure to maintain the directory structure. The cilent-node and dedicated-server should be in the same directory as the kademlia server. 
+
 -Run-
 
-Run 'python dedicated-server.py -p 5050' on at least one network node.
+Run 'python dedicated-server.py -p <port>' on at least one network node.
 This starts a server meant to get the initial system running. After that, the client nodes should be able to connect to each other.
 
-Run 'python client-node.py' on each network node.
+Run 'python client-node.py' on each network node. Note. There are a number of arguments to this file. Including the option to bootstrap to another server from the command line, or a list of bootstrappable nodes from a file.
 
 ----------------------------------------------------------------------------------------------------------------------------
 -The Future-
