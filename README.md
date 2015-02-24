@@ -61,7 +61,7 @@ Make sure to maintain the directory structure. The cilent-node and dedicated-ser
 
 -Run-
 
-Run 'python dedicated-server.py -p <port>' on at least one network node.
+Run 'python dedicated-server.py -p \<port\>' on at least one network node.
 This starts a server meant to get the initial system running. After that, the client nodes should be able to connect to each other.
 
 Run 'python client-node.py' on each network node. Note. There are a number of arguments to this file. Including the option to bootstrap to another server from the command line, or a list of bootstrappable nodes from a file.
