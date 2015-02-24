@@ -22,9 +22,11 @@ Due to the rapidly chaning nature of the network clients must push their data on
 
 -Failure Cases-
 
-How do we handle failure cases? We don't, the kademlia library uses black magic to ensure success. Also, it does //TODO, but mostly the black magic.
+How do we handle failure cases? We don't for the most part, the kademlia library has a lot of the problems associated with distributed hash tables built into it already (though it likely uses black magic to ensure success). The main problem we focused on was preventing hash tables from being poisoned by outdated IP addresses. Adding the timestamp to the hash table was our attempt at solving this, as was described above.
 
-for example, in the 2PC project, how are failures reflected to clients via the RPC interface that the coordinator exposes, if at all the test cases you explored, and why you picked those, along with test cases you would do if you had more time.
+-Future Tests-
+
+In future, we would like to experiment with different network connectivity speeds, limited bandwidths, and forced partial connectivity cases across the connected nodes. Ensuring our system could handle these senarios would be prefered, but seting up the testing system for acheiving these reliable was outside of this project's scope.
 
 ----------------------------------------------------------------------------------------------------------------------------
 
@@ -45,13 +47,14 @@ Install Twisted. do this using 'sudo pip install twisted'
 Run this because reasons 'sudo pip install rpcudp'
 
 Copy our code to a run directory:
-Specifically, client.py, server.py, and the kademelia folder from our github repository.
+Specifically, client-node.py, dedicated-server.py, and the kademelia folder from our github repository.
 
 -Run-
 
-run 'python client.py' on each network node.
+run 'python client-node.py' on each network node.
 
-run 'python server.py -p 5050' on at least one network node.
+run 'python dedicated-server.py -p 5050' on at least one network node.
+This starts a server ment to get the initial system running. After that, the client nodes should be able to connect to each other.
 
 ----------------------------------------------------------------------------------------------------------------------------
 -The Future-
