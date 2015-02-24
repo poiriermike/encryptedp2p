@@ -57,6 +57,7 @@ run 'python dedicated-server.py -p 5050' on at least one network node.
 This starts a server meant to get the initial system running. After that, the client nodes should be able to connect to each other.
 
 run 'python client-node.py' on each network node.
+
 ----------------------------------------------------------------------------------------------------------------------------
 -The Future-
 
