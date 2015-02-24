@@ -35,6 +35,7 @@ Another thing we would like to test is the systems security. With the current sy
 RUN INSTRUCTIONS
 
 -Setup-
+
 For each computer in the network do the following.
 We reccoment using fabric to run all these instructions in parellel on all the nodes.
 
