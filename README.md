@@ -10,7 +10,7 @@ The goal of our project is to build a decentralized peer to peer chat system. Th
 
 -Code Structure-
 
-Originally we had though to build our own distributed hash table, but that was apparently 'insane' or something, so we decided to use an existing implementation. All of out code is based off of the Kademlia library. However, we decided to modify it a bit in an attempt to fix a potential table poisioning issue (more on this later). We added a logical timestamp to the the table entries. The majority of our code is for ensuring that the library is able to run correctly, and to prevent failure of the system.
+Originally we had though to build our own distributed hash table, but that was apparently 'insane' or something, so we decided to use an existing implementation. All of our code is based off of the Kademlia library. However, we decided to modify it a bit in an attempt to fix a potential table poisioning issue (more on this later). We added a logical timestamp to the the table entries. The majority of our code is for ensuring that the library is able to run correctly, and to prevent failure of the system.
 
 -Modifications to the existing Kademlia library
 
@@ -27,6 +27,8 @@ How do we handle failure cases? We don't for the most part, the Kademlia library
 -Future Tests-
 
 In future, we would like to experiment with different network connectivity speeds, limited bandwidths, and forced partial connectivity cases across the connected nodes. Ensuring our system could handle these senarios would be prefered, but seting up the testing system for acheiving these reliable was outside of this project's scope.
+
+Another thing we would like to test is the systems security. With the current system, it is entirely possible to overwhelm the system with false timestamps, thereby poisoning the entries. Testing this will help us devise a potential solution to our modified code.
 
 ----------------------------------------------------------------------------------------------------------------------------
 
@@ -51,11 +53,10 @@ Specifically, client-node.py, dedicated-server.py, and the kademelia folder from
 
 -Run-
 
-run 'python client-node.py' on each network node.
-
 run 'python dedicated-server.py -p 5050' on at least one network node.
-This starts a server ment to get the initial system running. After that, the client nodes should be able to connect to each other.
+This starts a server meant to get the initial system running. After that, the client nodes should be able to connect to each other.
 
+run 'python client-node.py' on each network node.
 ----------------------------------------------------------------------------------------------------------------------------
 -The Future-
 
