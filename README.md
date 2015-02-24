@@ -24,6 +24,11 @@ Due to the rapidly chaning nature of the network clients must push their data on
 
 How do we handle failure cases? We don't for the most part, the Kademlia library contains solutions to a lot of the problems associated with distributed hash tables (though it likely uses black magic to ensure success). The main problem we focused on was preventing hash tables from being poisoned by outdated IP addresses. Adding the timestamp to the hash table was our attempt at solving this, as was described above.
 
+There are two main tests that we performed on our system.
+Fisrt we needed to test what happened when a node disconnects? Nodes could go down at any time for any reason, and our system needs to recover. The test we performed was to get our system running, then disconnect a node, or several nodes, and observe the results.
+
+Second, we tested what happened when old nodes (that had disconnected before) were re-added to the network. Speciffically what happens if their IP address changes while they are offline.
+
 -Future Tests-
 
 In future, we would like to experiment with different network connectivity speeds, limited bandwidths, and forced partial connectivity cases across the connected nodes. Ensuring our system could handle these senarios would be prefered, but seting up the testing system for acheiving these reliable was outside of this project's scope.
