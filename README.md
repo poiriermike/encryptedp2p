@@ -22,7 +22,7 @@ Due to the rapidly chaning nature of the network clients must push their data on
 
 -Failure Cases-
 
-How do we handle failure cases? We don't for the most part, the Kademlia library has a lot of the problems associated with distributed hash tables built into it already (though it likely uses black magic to ensure success). The main problem we focused on was preventing hash tables from being poisoned by outdated IP addresses. Adding the timestamp to the hash table was our attempt at solving this, as was described above.
+How do we handle failure cases? We don't for the most part, the Kademlia library contains solutions to a lot of the problems associated with distributed hash tables (though it likely uses black magic to ensure success). The main problem we focused on was preventing hash tables from being poisoned by outdated IP addresses. Adding the timestamp to the hash table was our attempt at solving this, as was described above.
 
 -Future Tests-
 
