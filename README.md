@@ -54,6 +54,8 @@ Install Twisted. Do this using 'sudo pip install twisted'
 
 Run this because reasons 'sudo pip install rpcudp'
 
+install tkinter (needed for GUI) 'sudo apt-get install python-tk'
+
 Copy our code to a run directory:
 Specifically, client-node.py, dedicated-server.py, and the kademelia folder from our github repository.
 
