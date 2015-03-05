@@ -6,18 +6,35 @@ except ImportError: #python 3
     from tkinter import *
 
 
-#set up the main window
-root = Tk()
-root.title("Encrypted P2P")
+
+def refreshAvailIP():
+
+    #populate the list of IP addresses here
+    ipList = {"192.168.0.1", "0.0.0.0"}
+    return ipList
 
 
-iPList = {"192.168.0.1", "0.0.0.0"}
-listB = Listbox(root)
+def initialize():
+    #set up the main window
+    root = Tk()
+    root.title("Encrypted P2P")
 
-for item in iPList:
-    listB.insert(0, item)
 
-listB.pack()
+    IPList = refreshAvailIP()
+    listB = Listbox(root)
+
+    for item in IPList:
+        listB.insert(0, item)
+
+    listB.pack()
+
+    return root
+
+
+
+
+
+root = initialize()
 root.mainloop()
 
 # create a fame which will hold all of the UI contents
