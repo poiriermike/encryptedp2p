@@ -10,13 +10,13 @@ IPList = []
 ConnectionsList = []
 
 selectedIP = NONE
+chatWindow = NONE
 
 def updateSelected():
 
     global selectedIP
     #TODO make this more robust etc
     selectedIP = ConnectionsList[1].get(ACTIVE)
-    print("Selected IP = " + selectedIP)
 
 def refreshAvailIP():
     global IPList
@@ -38,11 +38,17 @@ def connectToIP():
     updateSelected()
 
     if(selectedIP == NONE):
-        print ("Unable to connect to IP")
+        #print ("Unable to connect to IP")
+        chatWindow.config(state=NORMAL)
+        chatWindow.insert(END, "Unable to connect to IP")
+        chatWindow.config(state=DISABLED)
         return False;
 
-    #connect to selected IP here
-    print("Attempting to connect to "+ selectedIP)
+    #TODO connect to selected IP here
+    chatWindow.config(state=NORMAL)
+    chatWindow.insert(END, "Attempting to connect to "+ selectedIP+"\n")
+    chatWindow.config(state=DISABLED)
+    return True
 
 def closeProgram():
 
@@ -50,6 +56,7 @@ def closeProgram():
 
 def initialize():
     global ConnectionsList
+    global chatWindow
     #set up the main window
     root = Tk()
     root.title("Encrypted P2P")
@@ -65,7 +72,11 @@ def initialize():
 
     IPList = refreshAvailIP()
 
+    chatWindow = Text(root, height=5, state=DISABLED)
+    chatWindow.pack()
 
+    textEntry = Text(root, height=1)
+    textEntry.pack()
 
 
 
@@ -83,8 +94,6 @@ def initialize():
     #listB.pack()
 
     return root
-
-
 
 
 
