@@ -12,10 +12,16 @@ ConnectionsList = []
 selectedIP = NONE
 chatWindow = NONE
 
+def chatWindowPrintText(text):
+    chatWindow.config(state=NORMAL)
+    chatWindow.insert(END, text)
+    chatWindow.config(state=DISABLED)
+    chatWindow.see(END)
+
 def updateSelected():
 
     global selectedIP
-    #TODO make this more robust etc
+    #TODO make this more robust/usefull etc
     selectedIP = ConnectionsList[1].get(ACTIVE)
 
 def refreshAvailIP():
@@ -37,21 +43,16 @@ def connectToIP():
     global selectedIP
     updateSelected()
 
-    if(selectedIP == NONE):
-        #print ("Unable to connect to IP")
-        chatWindow.config(state=NORMAL)
-        chatWindow.insert(END, "Unable to connect to IP")
-        chatWindow.config(state=DISABLED)
+    #TODO failure cases for ip addresses go here
+    if(selectedIP == NONE or selectedIP == ""):
+        chatWindowPrintText("Unable to connect to IP\n")
         return False;
 
     #TODO connect to selected IP here
-    chatWindow.config(state=NORMAL)
-    chatWindow.insert(END, "Attempting to connect to "+ selectedIP+"\n")
-    chatWindow.config(state=DISABLED)
+    chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
     return True
 
 def closeProgram():
-
     root.quit()
 
 def initialize():
@@ -70,16 +71,25 @@ def initialize():
     ConnectionsList[0].grid(row=0, column=0)
     ConnectionsList[1].grid(row=0, column=1)
 
-    IPList = refreshAvailIP()
+    #set up chat window with scroll bar
+    chatTextFrame = Frame(root)
+    chatTextFrame.pack()
 
-    chatWindow = Text(root, height=5, state=DISABLED)
-    chatWindow.pack()
+    scrollbar = Scrollbar(chatTextFrame)
+    scrollbar.pack(side=RIGHT, fill=Y)
 
+    chatWindow = Text(chatTextFrame, height=5, state=DISABLED)
+    chatWindow.pack(side=LEFT, fill=BOTH)
+
+    scrollbar.config(command=chatWindow.yview)
+    chatWindow.config(yscrollcommand=scrollbar.set)
+
+    #set up user text field for input
     textEntry = Text(root, height=1)
     textEntry.pack()
 
 
-
+    #set up buttons and their method calls
     refreshButton = Button(root, text="Refresh List", command=refreshAvailIP)
     refreshButton.pack(side=LEFT)
 
@@ -96,12 +106,5 @@ def initialize():
     return root
 
 
-
 root = initialize()
 root.mainloop()
-
-# create a fame which will hold all of the UI contents
-#mainframe = ttk.Frame(root, padding = "5, 5, 5, 5")
-# allow frame expansion when resizing
-#mainframe.rowconfigure(0, Weight=1)
-#mainframe.columnconfigure(0, Weight=1)
