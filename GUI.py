@@ -6,27 +6,68 @@ except ImportError: #python 3
     from tkinter import *
 
 
+IPList = []
+ConnectionsList = []
+
+selectedIP = NONE
+
+def updateSelected(listBox):
+
+    listBox.get()
 
 def refreshAvailIP():
+    global IPList
+
 
     #populate the list of IP addresses here
-    ipList = {"192.168.0.1", "0.0.0.0"}
-    return ipList
+    IPList = {"Robert" : "192.168.0.1", "Mike" : "100.42.16.45"}
 
+    #clear all the old values from the list box
+    ConnectionsList[0].delete(0, END)
+    ConnectionsList[1].delete(0, END)
+    for item in IPList.keys():
+        ConnectionsList[0].insert(END, item)
+        ConnectionsList[1].insert(END, IPList.get(item))
+
+def connectToIP():
+
+    global selectedIP
+
+    if(selectedIP == NONE):
+        print ("Unable to connect to IP")
+        return False;
+
+    #connect to selected IP here
+    print("Attempting to connect to "+ selectedIP.ToString())
 
 def initialize():
+    global ConnectionsList
     #set up the main window
     root = Tk()
     root.title("Encrypted P2P")
 
+    mainFrame = Frame(root)
+    mainFrame.pack()
+
+    ConnectionsList.append(Listbox(mainFrame, selectmode=SINGLE))
+    ConnectionsList.append(Listbox(mainFrame))
+
+    ConnectionsList[0].grid(row=0, column=0)
+    ConnectionsList[1].grid(row=0, column=1)
 
     IPList = refreshAvailIP()
-    listB = Listbox(root)
 
-    for item in IPList:
-        listB.insert(0, item)
 
-    listB.pack()
+
+
+
+    refreshButton = Button(root, text="Refresh List", command=refreshAvailIP)
+    refreshButton.pack(side=LEFT)
+
+    connectButton = Button(root, text="Connect", command=connectToIP)
+    connectButton.pack(side=RIGHT)
+
+    #listB.pack()
 
     return root
 
