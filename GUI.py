@@ -11,15 +11,18 @@ ConnectionsList = []
 
 selectedIP = NONE
 
-def updateSelected(listBox):
+def updateSelected():
 
-    listBox.get()
+    global selectedIP
+    #TODO make this more robust etc
+    selectedIP = ConnectionsList[1].get(ACTIVE)
+    print("Selected IP = " + selectedIP)
 
 def refreshAvailIP():
     global IPList
 
 
-    #populate the list of IP addresses here
+    #TODO populate the list of IP addresses here
     IPList = {"Robert" : "192.168.0.1", "Mike" : "100.42.16.45"}
 
     #clear all the old values from the list box
@@ -32,13 +35,18 @@ def refreshAvailIP():
 def connectToIP():
 
     global selectedIP
+    updateSelected()
 
     if(selectedIP == NONE):
         print ("Unable to connect to IP")
         return False;
 
     #connect to selected IP here
-    print("Attempting to connect to "+ selectedIP.ToString())
+    print("Attempting to connect to "+ selectedIP)
+
+def closeProgram():
+
+    root.quit()
 
 def initialize():
     global ConnectionsList
@@ -50,7 +58,7 @@ def initialize():
     mainFrame.pack()
 
     ConnectionsList.append(Listbox(mainFrame, selectmode=SINGLE))
-    ConnectionsList.append(Listbox(mainFrame))
+    ConnectionsList.append(Listbox(mainFrame, selectmode=SINGLE))
 
     ConnectionsList[0].grid(row=0, column=0)
     ConnectionsList[1].grid(row=0, column=1)
@@ -64,8 +72,13 @@ def initialize():
     refreshButton = Button(root, text="Refresh List", command=refreshAvailIP)
     refreshButton.pack(side=LEFT)
 
+    exitButton = Button(root, text="Exit Program", command=closeProgram)
+    exitButton.pack(side=RIGHT)
+
     connectButton = Button(root, text="Connect", command=connectToIP)
     connectButton.pack(side=RIGHT)
+
+
 
     #listB.pack()
 
