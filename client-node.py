@@ -109,31 +109,38 @@ selectedIP = NONE
 chatWindow = NONE
 textEntry = NONE
 
+# print givent text in the chat text window
 def chatWindowPrintText(text):
     chatWindow.config(state=NORMAL)
     chatWindow.insert(END, text)
     chatWindow.config(state=DISABLED)
     chatWindow.see(END)
 
+# Hopefully temp way to clean up the newline in the text box after sending messages
+def clearText(event):
+    if event.keysym == 'Return':
+        textEntry.delete('0.0', END)
+
+#Send a message through the GUI chat
 def sendChatMessage(event):
     global textEntry
     if event.keysym == 'Return':
         message = textEntry.get('0.0', END)
         textEntry.delete('0.0', END)
 
-        chatWindowPrintText(message)
+        chatWindowPrintText(message.lstrip())
         #TODO send message to connected parties in chat
 
-
+# update the global selected IP address
 def updateSelected():
 
     global selectedIP
     #TODO make this more robust/usefull etc
     selectedIP = ConnectionsList[1].get(ACTIVE)
 
+# clean out all IP entries and replace them with an updated list
 def refreshAvailIP():
     global IPList
-
 
     #TODO populate the list of IP addresses here
     IPList = {"Robert" : "192.168.0.1", "Mike" : "100.42.16.45"}
@@ -141,10 +148,15 @@ def refreshAvailIP():
     #clear all the old values from the list box
     ConnectionsList[0].delete(0, END)
     ConnectionsList[1].delete(0, END)
+    #add new values to the list box (as Strings)
     for item in IPList.keys():
         ConnectionsList[0].insert(END, item)
         ConnectionsList[1].insert(END, IPList.get(item))
 
+    for item in known_nodes:
+        ConnectionsList[1].insert(END,item[0])
+
+# connect to the selected IP address
 def connectToIP():
 
     global selectedIP
@@ -162,6 +174,7 @@ def connectToIP():
 def closeProgram():
     reactor.stop()
 
+#Set up the GUI and containers, frames, lists, etc. before running the program loop
 def initializeGUI():
     global ConnectionsList
     global chatWindow
@@ -198,7 +211,8 @@ def initializeGUI():
 
     textEntry = Text(chatEntryFrame, height=2)
     textEntry.pack(side=LEFT)
-    textEntry.bind("<KeyRelease>", sendChatMessage)
+    textEntry.bind("<Key>", sendChatMessage)
+    textEntry.bind("<KeyRelease>", clearText)
 
 
     #set up buttons and their method calls
