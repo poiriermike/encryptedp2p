@@ -102,16 +102,28 @@ server.bootstrap(known_nodes).addCallback(getIPs, server)
 #----------------------------------------------------------------------------------------------------------------------
 #Begin GUI code
 
+# list boxes containing contact info
 ConnectionsList = []
 
 selectedIP = NONE
 chatWindow = NONE
+textEntry = NONE
 
 def chatWindowPrintText(text):
     chatWindow.config(state=NORMAL)
     chatWindow.insert(END, text)
     chatWindow.config(state=DISABLED)
     chatWindow.see(END)
+
+def sendChatMessage(event):
+    global textEntry
+    if event.keysym == 'Return':
+        message = textEntry.get('0.0', END)
+        textEntry.delete('0.0', END)
+
+        chatWindowPrintText(message)
+        #TODO send message to connected parties in chat
+
 
 def updateSelected():
 
@@ -153,6 +165,7 @@ def closeProgram():
 def initializeGUI():
     global ConnectionsList
     global chatWindow
+    global textEntry
     #set up the main window
     root = Tk()
     root.title("Encrypted P2P")
@@ -173,15 +186,19 @@ def initializeGUI():
     scrollbar = Scrollbar(chatTextFrame)
     scrollbar.pack(side=RIGHT, fill=Y)
 
-    chatWindow = Text(chatTextFrame, height=5, state=DISABLED)
+    chatWindow = Text(chatTextFrame, height=8, state=DISABLED)
     chatWindow.pack(side=LEFT, fill=BOTH)
 
     scrollbar.config(command=chatWindow.yview)
     chatWindow.config(yscrollcommand=scrollbar.set)
 
     #set up user text field for input
-    textEntry = Text(root, height=1)
-    textEntry.pack()
+    chatEntryFrame = Frame(root)
+    chatEntryFrame.pack()
+
+    textEntry = Text(chatEntryFrame, height=2)
+    textEntry.pack(side=LEFT)
+    textEntry.bind("<KeyRelease>", sendChatMessage)
 
 
     #set up buttons and their method calls
