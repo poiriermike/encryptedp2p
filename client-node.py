@@ -24,6 +24,7 @@ parser.add_argument('-b', '--bootstrap', dest='bootstrap', action='store_true', 
 parser.add_argument('-s', '--save', dest='save', action='store_true', default=False, help='Specify whether you want to save a state')
 parser.add_argument('-I', '--bsip', dest='bsip', type=str, action='store', default=False, help='Set the bootstrap server IP.')
 parser.add_argument('-P', '--bsport', dest='bsport', type=str, action='store', default=False, help='Set the bootstrap server port.')
+parser.add_argument('-N', '--nogui', dest='nogui', action='store_true', default=False, help='Do not run the GUI part of the node')
 args = parser.parse_args()
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
@@ -149,7 +150,7 @@ def connectToIP():
 def closeProgram():
     reactor.stop()
 
-def initialize():
+def initializeGUI():
     global ConnectionsList
     global chatWindow
     #set up the main window
@@ -199,9 +200,10 @@ def initialize():
 
     return root
 
-
-root = initialize()
-tksupport.install(root)
+#set up the gui root and connect it to the reactor
+if not args.nogui:
+    root = initializeGUI()
+    tksupport.install(root)
 
 # starts the execution of the server code
 reactor.run()
