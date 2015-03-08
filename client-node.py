@@ -1,10 +1,14 @@
 import sys,os,socket,argparse
 # Uses local version of Kademlia
 sys.path.insert(0, "kademlia")
-from twisted.internet import reactor
+from twisted.internet import reactor, tksupport
 from twisted.python import log
 from kademlia.network import Server
 
+try: #python 2
+    from Tkinter import *
+except ImportError: #python 3
+    from tkinter import *
 
 backup = "client_state.bak"
 default_port = 5050
@@ -20,6 +24,7 @@ parser.add_argument('-b', '--bootstrap', dest='bootstrap', action='store_true', 
 parser.add_argument('-s', '--save', dest='save', action='store_true', default=False, help='Specify whether you want to save a state')
 parser.add_argument('-I', '--bsip', dest='bsip', type=str, action='store', default=False, help='Set the bootstrap server IP.')
 parser.add_argument('-P', '--bsport', dest='bsport', type=str, action='store', default=False, help='Set the bootstrap server port.')
+parser.add_argument('-N', '--nogui', dest='nogui', action='store_true', default=False, help='Do not run the GUI part of the node')
 args = parser.parse_args()
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
@@ -93,6 +98,143 @@ if args.save:
 
 # The addCallback can be added to many of the server functions, and can be used to chain call functions
 server.bootstrap(known_nodes).addCallback(getIPs, server)
+
+#----------------------------------------------------------------------------------------------------------------------
+#Begin GUI code
+
+# list boxes containing contact info
+ConnectionsList = []
+
+selectedIP = NONE
+chatWindow = NONE
+textEntry = NONE
+
+# print givent text in the chat text window
+def chatWindowPrintText(text):
+    chatWindow.config(state=NORMAL)
+    chatWindow.insert(END, text)
+    chatWindow.config(state=DISABLED)
+    chatWindow.see(END)
+
+# Hopefully temp way to clean up the newline in the text box after sending messages
+def clearText(event):
+    if event.keysym == 'Return':
+        textEntry.delete('0.0', END)
+
+#Send a message through the GUI chat
+def sendChatMessage(event):
+    global textEntry
+    if event.keysym == 'Return':
+        message = textEntry.get('0.0', END)
+        textEntry.delete('0.0', END)
+
+        chatWindowPrintText(message.lstrip())
+        #TODO send message to connected parties in chat
+
+# update the global selected IP address
+def updateSelected():
+
+    global selectedIP
+    #TODO make this more robust/usefull etc
+    selectedIP = ConnectionsList[1].get(ACTIVE)
+
+# clean out all IP entries and replace them with an updated list
+def refreshAvailIP():
+    global IPList
+
+    #TODO populate the list of IP addresses here
+    IPList = {"Robert" : "192.168.0.1", "Mike" : "100.42.16.45"}
+
+    #clear all the old values from the list box
+    ConnectionsList[0].delete(0, END)
+    ConnectionsList[1].delete(0, END)
+    #add new values to the list box (as Strings)
+    for item in IPList.keys():
+        ConnectionsList[0].insert(END, item)
+        ConnectionsList[1].insert(END, IPList.get(item))
+
+    for item in known_nodes:
+        ConnectionsList[1].insert(END,item[0])
+
+# connect to the selected IP address
+def connectToIP():
+
+    global selectedIP
+    updateSelected()
+
+    #TODO failure cases for ip addresses go here
+    if(selectedIP == NONE or selectedIP == ""):
+        chatWindowPrintText("Unable to connect to IP\n")
+        return False;
+
+    #TODO connect to selected IP here
+    chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
+    return True
+
+def closeProgram():
+    reactor.stop()
+
+#Set up the GUI and containers, frames, lists, etc. before running the program loop
+def initializeGUI():
+    global ConnectionsList
+    global chatWindow
+    global textEntry
+    #set up the main window
+    root = Tk()
+    root.title("Encrypted P2P")
+
+    mainFrame = Frame(root)
+    mainFrame.pack()
+
+    ConnectionsList.append(Listbox(mainFrame, selectmode=SINGLE))
+    ConnectionsList.append(Listbox(mainFrame, selectmode=SINGLE))
+
+    ConnectionsList[0].grid(row=0, column=0)
+    ConnectionsList[1].grid(row=0, column=1)
+
+    #set up chat window with scroll bar
+    chatTextFrame = Frame(root)
+    chatTextFrame.pack()
+
+    scrollbar = Scrollbar(chatTextFrame)
+    scrollbar.pack(side=RIGHT, fill=Y)
+
+    chatWindow = Text(chatTextFrame, height=8, state=DISABLED)
+    chatWindow.pack(side=LEFT, fill=BOTH)
+
+    scrollbar.config(command=chatWindow.yview)
+    chatWindow.config(yscrollcommand=scrollbar.set)
+
+    #set up user text field for input
+    chatEntryFrame = Frame(root)
+    chatEntryFrame.pack()
+
+    textEntry = Text(chatEntryFrame, height=2)
+    textEntry.pack(side=LEFT)
+    textEntry.bind("<Key>", sendChatMessage)
+    textEntry.bind("<KeyRelease>", clearText)
+
+
+    #set up buttons and their method calls
+    refreshButton = Button(root, text="Refresh List", command=refreshAvailIP)
+    refreshButton.pack(side=LEFT)
+
+    exitButton = Button(root, text="Exit Program", command=closeProgram)
+    exitButton.pack(side=RIGHT)
+
+    connectButton = Button(root, text="Connect", command=connectToIP)
+    connectButton.pack(side=RIGHT)
+
+
+
+    #listB.pack()
+
+    return root
+
+#set up the gui root and connect it to the reactor
+if not args.nogui:
+    root = initializeGUI()
+    tksupport.install(root)
 
 # starts the execution of the server code
 reactor.run()
