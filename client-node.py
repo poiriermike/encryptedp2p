@@ -181,7 +181,8 @@ def initializeGUI():
     global textEntry
     #set up the main window
     root = Tk()
-    root.title("Encrypted P2P")
+    root.title("Encrypted P2P Chat GUI")
+    root.protocol('WM_DELETE_WINDOW', closeProgram)
 
     mainFrame = Frame(root)
     mainFrame.pack()
