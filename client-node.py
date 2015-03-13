@@ -102,6 +102,34 @@ server.bootstrap(known_nodes).addCallback(getIPs, server)
 #----------------------------------------------------------------------------------------------------------------------
 #Begin GUI code
 
+from twisted.internet.protocol import Factory, ClientFactory, Protocol
+from twisted.internet.endpoints import TCP4ClientEndpoint
+from sys import stdout
+
+class Echo(Protocol):
+    def dataRecieved(selfself, data):
+        stdout.write(data)
+
+class EchoClientFactory(ClientFactory):
+    def startConnecting(self, connector):
+        print("Starting to connect")
+
+    def buildProtocol(self, addr):
+        print("connected")
+        return Echo()
+    def clientConnectionLost(self, connector, reason):
+        print("Lost Connection: " + reason)
+    def clientConnectionLost(self, connector, reason):
+        print("Lost Failed: " + reason)
+
+def gotProtocol(p):
+    p.dataRecieved("Hello")
+
+point = TCP4ClientEndpoint(reactor, "localhost", 1025)
+d = point.connect(EchoClientFactory())
+d.addCallback(gotProtocol)
+#reactor.connectTCP('127.0.0.1', 1025, EchoClientFactory())
+
 # list boxes containing contact info
 ConnectionsList = []
 
@@ -169,6 +197,7 @@ def connectToIP():
 
     #TODO connect to selected IP here
     chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
+
     return True
 
 def closeProgram():
