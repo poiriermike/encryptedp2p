@@ -13,6 +13,12 @@ except ImportError: #python 3
 backup = "client_state.bak"
 default_port = 5050
 
+# This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
+# implement it how we were discussing last week.
+known_nodes = [("127.0.0.1", 5050)]
+
+# list boxes containing contact info
+Contacts = []
 
 # This is a simple node on the network.
 # Some fancy argument parsing. cause I'm cool like that.
@@ -27,9 +33,13 @@ parser.add_argument('-P', '--bsport', dest='bsport', type=str, action='store', d
 parser.add_argument('-N', '--nogui', dest='nogui', action='store_true', default=False, help='Do not run the GUI part of the node')
 args = parser.parse_args()
 
-# This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
-# implement it how we were discussing last week.
-known_nodes = [("127.0.0.1", 5050)]
+# Import the contacts from the contact file
+# TODO: Consider making the contact file settable from the command line
+if os.path.isfile("contacts.txt"):
+    with open("contacts.txt", "r") as f:
+        for line in f:
+            info = line.split()
+            Contacts = {"username": info[1], "key": info[0], "ip":None, "port": None, "online": False}
 
 if args.bootstrap:
     if not args.bsip or not args.bsport:
@@ -63,6 +73,7 @@ if args.log:
 else:
     log.startLogging(sys.stdout)
 
+'''
 def print_result(result):
     print("Value found=" + str(result))
 
@@ -76,6 +87,17 @@ def get(result, server):
 def set(stuff, server):
     print("STUFF " + str(stuff))
     server.set(socket.gethostname(), stuff).addCallback(get, server)
+'''
+
+#---------------------------------------------------------------------------------------------------------------------
+# Begin Support Code
+
+# Sets the value of the hostname to it's IP address according to the other nodes in the network
+def set(myIP, server):
+    with open("identity.txt", "r") as f:
+        for line in f:
+            id = line.split()
+            server.set(str(id[0]) + str(id[1]), myIP)
 
 # Simple function to call upon a server bootstrap. It will add a key/value pair to the hash table
 def getIPs(stuff, morestuff):
