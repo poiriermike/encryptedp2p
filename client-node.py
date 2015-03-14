@@ -1,7 +1,7 @@
 import sys,os,socket,argparse
 # Uses local version of Kademlia
 sys.path.insert(0, "kademlia")
-from twisted.internet import reactor, tksupport
+from twisted.internet import reactor, tksupport, task
 from twisted.python import log
 from kademlia.network import Server
 
@@ -13,6 +13,12 @@ except ImportError: #python 3
 backup = "client_state.bak"
 default_port = 5050
 
+# This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
+# implement it how we were discussing last week.
+known_nodes = [("127.0.0.1", 5050)]
+
+# list boxes containing contact info
+Contacts = [{"username": "sample", "key": "key_value", "ip": "1.1.1.1", "port": "3000", "online": False}]
 
 # This is a simple node on the network.
 # Some fancy argument parsing. cause I'm cool like that.
@@ -27,9 +33,17 @@ parser.add_argument('-P', '--bsport', dest='bsport', type=str, action='store', d
 parser.add_argument('-N', '--nogui', dest='nogui', action='store_true', default=False, help='Do not run the GUI part of the node')
 args = parser.parse_args()
 
-# This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
-# implement it how we were discussing last week.
-known_nodes = [("127.0.0.1", 5050)]
+# Import the contacts from the contact file
+# TODO: Consider making the contact file settable from the command line
+if os.path.isfile("contacts.txt"):
+    with open("contacts.txt", "r") as f:
+        for line in f:
+            info = line.split()
+            if len(info) != 0:
+                Contacts.append({"username": info[1], "key": info[0], "ip":None, "port": None, "online": False})
+else:
+    with open("contacts.txt", "w"):
+        log.msg("No contacts found. Adding contact file.")
 
 if args.bootstrap:
     if not args.bsip or not args.bsport:
@@ -63,6 +77,7 @@ if args.log:
 else:
     log.startLogging(sys.stdout)
 
+'''
 def print_result(result):
     print("Value found=" + str(result))
 
@@ -76,6 +91,21 @@ def get(result, server):
 def set(stuff, server):
     print("STUFF " + str(stuff))
     server.set(socket.gethostname(), stuff).addCallback(get, server)
+'''
+
+#---------------------------------------------------------------------------------------------------------------------
+# Begin Support Code
+
+# Sets the value of the hostname to it's IP address according to the other nodes in the network
+def set(myIP, server):
+    if os.path.isfile("identity.txt"):
+        with open("identity.txt", "r") as f:
+            for line in f:
+                id = line.split()
+                server.set(str(id[0]) + str(id[1]), myIP)
+    else:
+        log.err("No identity fie found. Exiting.")
+        reactor.stop()
 
 # Simple function to call upon a server bootstrap. It will add a key/value pair to the hash table
 def getIPs(stuff, morestuff):
@@ -102,56 +132,12 @@ server.bootstrap(known_nodes).addCallback(getIPs, server)
 #----------------------------------------------------------------------------------------------------------------------
 #Begin GUI code
 
-from twisted.internet.protocol import Factory, ClientFactory, Protocol
-from twisted.internet.endpoints import TCP4ClientEndpoint, TCP4ServerEndpoint, connectProtocol
-from sys import stdout
-
-# Simple Server recieve protocol. writes data to GUI
-class Echo(Protocol):
-    def dataRecieved(selfself, data):
-        chatWindowPrintText(data)
-class EchoFactory(Factory):
-    def buildProtocol(self, addr):
-        return Echo()
-
-# Set up server listening skills
-endpoint = TCP4ServerEndpoint(reactor, 5051)
-endpoint.listen(EchoFactory())
-
-class EchoClient(Protocol):
-    def sendMessage(self, text):
-        self.transport.write(text)
-
-class EchoClientFactory(ClientFactory):
-    def startConnecting(self, connector):
-        print("Starting to connect")
-
-    def buildProtocol(self, addr):
-        print("connected")
-        return Echo()
-
-    def clientConnectionLost(self, connector, reason):
-        print("Lost Connection: " + str(reason))
-
-    def clientConnectionLost(self, connector, reason):
-        print("Lost Failed: " + str(reason))
-
-def gotProtocol(p):
-    p.sendMessage("Hello")
-
-#point = TCP4ClientEndpoint(reactor, "localhost", 1025)
-#d = point.connect(EchoClientFactory())
-#d.addCallback(gotProtocol)
-#reactor.connectTCP('localhost', 1025, EchoClientFactory())
-
 # list boxes containing contact info
 ConnectionsList = []
 
 selectedIP = NONE
 chatWindow = NONE
 textEntry = NONE
-
-clientService = EchoClient()
 
 # print givent text in the chat text window
 def chatWindowPrintText(text):
@@ -174,7 +160,6 @@ def sendChatMessage(event):
 
         chatWindowPrintText(message.lstrip())
         #TODO send message to connected parties in chat
-        #clientService.sendMessage(message)
         gotProtocol(clientService)
 
 # update the global selected IP address
@@ -184,23 +169,22 @@ def updateSelected():
     #TODO make this more robust/usefull etc
     selectedIP = ConnectionsList[1].get(ACTIVE)
 
-# clean out all IP entries and replace them with an updated list
+
+# Takes the result from the DHT and parses out the IP and port
+# TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
+def get_contact_location(result, contact):
+    if result is not None:
+        contact['ip'] = result[0][0]
+        contact['port'] = result[0][1]
+
+# Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
 def refreshAvailIP():
-    global IPList
-
-    #TODO populate the list of IP addresses here
-    IPList = {"Robert" : "192.168.0.1", "Mike" : "100.42.16.45"}
-
-    #clear all the old values from the list box
-    ConnectionsList[0].delete(0, END)
-    ConnectionsList[1].delete(0, END)
-    #add new values to the list box (as Strings)
-    for item in IPList.keys():
-        ConnectionsList[0].insert(END, item)
-        ConnectionsList[1].insert(END, IPList.get(item))
-
-    for item in known_nodes:
-        ConnectionsList[1].insert(END,item[0])
+    global Contacts
+    log.msg("Refreshing Contact List automagically")
+    for contact in Contacts:
+        # This adds the get_ip function to the server callback list. Will do so for each contact
+        server.get(contact['key'] + contact['username']).addCallback(get_contact_location, contact)
+    #print(Contacts)
 
 # connect to the selected IP address
 def connectToIP():
@@ -211,17 +195,10 @@ def connectToIP():
     #TODO failure cases for ip addresses go here
     if(selectedIP == NONE or selectedIP == ""):
         chatWindowPrintText("Unable to connect to IP\n")
-        return False;
+        return False
 
     #TODO connect to selected IP here
-    chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
-
-    #reactor.connectTCP(selectedIP, 5051, EchoClientFactory())
-
-    point = TCP4ClientEndpoint(reactor, selectedIP, 5051)
-    d = connectProtocol(point, clientService)#(EchoClientFactory())
-    d.addCallback(gotProtocol)
-
+    chatWindowPrintText("Attempting to connect to " + selectedIP+"\n")
     return True
 
 def closeProgram():
@@ -289,6 +266,10 @@ def initializeGUI():
 if not args.nogui:
     root = initializeGUI()
     tksupport.install(root)
+
+#Will automatically refresh the contacts every minute
+contact_refresh_loop = task.LoopingCall(refreshAvailIP)
+contact_refresh_loop.start(10)
 
 # starts the execution of the server code
 reactor.run()
