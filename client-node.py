@@ -351,9 +351,8 @@ if not args.nogui:
     tksupport.install(root)
 
 #Will automatically refresh the contacts every minute
-#TODO uncomment this
-#contact_refresh_loop = task.LoopingCall(refreshAvailIP)
-#contact_refresh_loop.start(10)
+contact_refresh_loop = task.LoopingCall(refreshAvailIP)
+contact_refresh_loop.start(10)
 
 # starts the execution of the server code
 reactor.run()
