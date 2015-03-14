@@ -18,7 +18,7 @@ default_port = 5050
 known_nodes = [("127.0.0.1", 5050)]
 
 # list boxes containing contact info
-Contacts = []
+Contacts = [{"username": "sample", "key": "key_value", "ip": "1.1.1.1", "port": "3000", "online": False}]
 
 # This is a simple node on the network.
 # Some fancy argument parsing. cause I'm cool like that.
@@ -39,7 +39,11 @@ if os.path.isfile("contacts.txt"):
     with open("contacts.txt", "r") as f:
         for line in f:
             info = line.split()
-            Contacts = {"username": info[1], "key": info[0], "ip":None, "port": None, "online": False}
+            if len(info) != 0:
+                Contacts.append({"username": info[1], "key": info[0], "ip":None, "port": None, "online": False})
+else:
+    with open("contacts.txt", "w"):
+        log.msg("No contacts found. Adding contact file.")
 
 if args.bootstrap:
     if not args.bsip or not args.bsport:
@@ -94,10 +98,14 @@ def set(stuff, server):
 
 # Sets the value of the hostname to it's IP address according to the other nodes in the network
 def set(myIP, server):
-    with open("identity.txt", "r") as f:
-        for line in f:
-            id = line.split()
-            server.set(str(id[0]) + str(id[1]), myIP)
+    if os.path.isfile("identity.txt"):
+        with open("identity.txt", "r") as f:
+            for line in f:
+                id = line.split()
+                server.set(str(id[0]) + str(id[1]), myIP)
+    else:
+        log.err("No identity fie found. Exiting.")
+        reactor.stop()
 
 # Simple function to call upon a server bootstrap. It will add a key/value pair to the hash table
 def getIPs(stuff, morestuff):
