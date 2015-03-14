@@ -171,18 +171,17 @@ def updateSelected():
 
 # Takes the result from the DHT and parses out the IP and port
 # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
-def get_ip(result, contact):
+def get_contact_location(result, contact):
     if result is not None:
         contact['ip'] = result[0][0]
         contact['port'] = result[0][1]
 
-# clean out all IP entries and replace them with an updated list
+# Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
 def refreshAvailIP():
     global Contacts
     for contact in Contacts:
-
         # This adds the get_ip function to the server callback list. Will do so for each contact
-        server.get(contact['key'] + contact['username']).addCallback(get_ip, contact)
+        server.get(contact['key'] + contact['username']).addCallback(get_contact_location, contact)
 
 
 # connect to the selected IP address
