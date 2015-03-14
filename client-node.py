@@ -1,7 +1,7 @@
 import sys,os,socket,argparse
 # Uses local version of Kademlia
 sys.path.insert(0, "kademlia")
-from twisted.internet import reactor, tksupport
+from twisted.internet import reactor, tksupport, task
 from twisted.python import log
 from kademlia.network import Server
 
@@ -179,10 +179,11 @@ def get_contact_location(result, contact):
 # Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
 def refreshAvailIP():
     global Contacts
+    log.msg("Refreshing Contact List automagically")
     for contact in Contacts:
         # This adds the get_ip function to the server callback list. Will do so for each contact
         server.get(contact['key'] + contact['username']).addCallback(get_contact_location, contact)
-
+    #print(Contacts)
 
 # connect to the selected IP address
 def connectToIP():
@@ -264,6 +265,10 @@ def initializeGUI():
 if not args.nogui:
     root = initializeGUI()
     tksupport.install(root)
+
+#Will automatically refresh the contacts every minute
+contact_refresh_loop = task.LoopingCall(refreshAvailIP)
+contact_refresh_loop.start(10)
 
 # starts the execution of the server code
 reactor.run()
