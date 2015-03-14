@@ -139,11 +139,14 @@ from sys import stdout
 # Simple Server recieve protocol. writes data to GUI
 class EchoServer(Protocol):
     def dataRecieved(selfself, data):
+        print("Echo Server: data recieved: " + data)
         chatWindowPrintText(data)
+
 class ServerFactory(ServerFactory):
     protocol = EchoServer
 
     def buildProtocol(self, addr):
+        print("Echo Server: build protocol")
         return EchoServer()
 
 # Set up server listening skills
@@ -151,37 +154,31 @@ class ServerFactory(ServerFactory):
 #endpoint.listen(ServerFactory())
 
 s = ServerFactory()
-reactor.listenTCP(9000, s)
+try:
+    reactor.listenTCP(9000, s)
+except:
+    pass #reactor.listenTCP(9010, s)
 
 class EchoClient(Protocol):
     def makeConnection(self, transport):
-        print("make Connection")
-
+        print("Echo Client: make Connection")
 
     def sendMessage(self, text):
-        print("called sendMessage")
-        #self.transport.write(text)
+        print("Echo Client: called sendMessage")
+        self.transport.write(text)
 
 class ClientFactory(ClientFactory):
     protocol = EchoClient
 
     def startConnecting(self, connector):
-        print("Starting to connect")
+        print("ClientFactory: Starting to connect")
 
     def buildProtocol(self, addr):
-        print("connected")
+        print("ClientFactory: build Protocol")
         return EchoServer()
 
     def clientConnectionLost(self, connector, reason):
-        print("Lost Connection")
-
-    def clientConnectionLost(self, connector, reason):
-        print("Lost Failed")
-
-#point = TCP4ClientEndpoint(reactor, "localhost", 1025)
-#d = point.connect(EchoClientFactory())
-#d.addCallback(gotProtocol)
-#reactor.connectTCP('localhost', 1025, EchoClientFactory())
+        print("ClientFactory: Connection Lost")
 
 # list boxes containing contact info
 ConnectionsList = []
@@ -242,6 +239,15 @@ def refreshAvailIP():
         server.get(contact['key'] + contact['username']).addCallback(get_contact_location, contact)
     #print(Contacts)
 
+    #clear the listboxes in the GUI of old values
+    ConnectionsList[0].delete(0, END)
+    ConnectionsList[1].delete(0, END)
+
+    # add the new values to the GUI
+    ConnectionsList[0].insert(END, contact['username'])
+    ConnectionsList[1].insert(END, contact['ip'])
+
+
 # connect to the selected IP address
 def connectToIP():
 
@@ -257,14 +263,14 @@ def connectToIP():
     #TODO connect to selected IP here
     chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
 
-
-    clientFactory = ClientFactory()
-    reactor.connectTCP(selectedIP, 8001, clientFactory)
-    clientService = EchoClient()
+    if clientFactory is NONE or clientService is NONE:
+        clientFactory = ClientFactory()
+        clientService = EchoClient()
+    reactor.connectTCP('localhost', 9000, clientFactory)
     clientService.sendMessage("Connected?")
-    #point = TCP4ClientEndpoint(reactor, selectedIP, 5051)
-    #d = connectProtocol(point, clientService)
-    #d.addCallback(gotProtocol)
+        #point = TCP4ClientEndpoint(reactor, selectedIP, 5051)
+        #d = connectProtocol(point, clientService)
+        #d.addCallback(gotProtocol)
 
     return True
 
@@ -335,8 +341,9 @@ if not args.nogui:
     tksupport.install(root)
 
 #Will automatically refresh the contacts every minute
-contact_refresh_loop = task.LoopingCall(refreshAvailIP)
-contact_refresh_loop.start(10)
+#TODO uncomment this
+#contact_refresh_loop = task.LoopingCall(refreshAvailIP)
+#contact_refresh_loop.start(10)
 
 # starts the execution of the server code
 reactor.run()
