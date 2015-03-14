@@ -102,7 +102,12 @@ def set(myIP, server):
         with open("identity.txt", "r") as f:
             for line in f:
                 id = line.split()
-                server.set(str(id[0]) + str(id[1]), myIP)
+                if len(id) == 2:
+                    log.msg("Adding identity to table with username " + str(id[1]) + " and key " + str(id[0]))
+                    server.set(str(id[0]) + str(id[1]), myIP)
+                else:
+                    log.err("Error adding identity file.")
+                    reactor.stop()
     else:
         log.err("No identity fie found. Exiting.")
         reactor.stop()
