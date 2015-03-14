@@ -15,10 +15,13 @@ port = int(sys.argv[2])
 key = sys.argv[3]
 value = sys.argv[4]
 
+if ":" in value:
+    value = value.split(":")
 print "Getting %s (with bootstrap %s:%i)" % (key, ip, port)
 
 def done(result):
-    reactor.stop()
+    pass
+    #reactor.stop()
 
 def bootstrapDone(found, server, key):
     if len(found) == 0:

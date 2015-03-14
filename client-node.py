@@ -168,18 +168,21 @@ def updateSelected():
     #TODO make this more robust/usefull etc
     selectedIP = ConnectionsList[1].get(ACTIVE)
 
-def update_ip(result, contact):
-    if result:
-        contact['ip'] = result[0]
-        contact['port'] = result[1]
+
+# Takes the result from the DHT and parses out the IP and port
+# TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
+def get_ip(result, contact):
+    if result is not None:
+        contact['ip'] = result[0][0]
+        contact['port'] = result[0][1]
 
 # clean out all IP entries and replace them with an updated list
 def refreshAvailIP():
     global Contacts
-
     for contact in Contacts:
-        server.get(contact['key'] + contact['username']).addCallback(update_ip, contact)
-        print(str(contact))
+
+        # This adds the get_ip function to the server callback list. Will do so for each contact
+        server.get(contact['key'] + contact['username']).addCallback(get_ip, contact)
 
 
 # connect to the selected IP address
@@ -191,10 +194,10 @@ def connectToIP():
     #TODO failure cases for ip addresses go here
     if(selectedIP == NONE or selectedIP == ""):
         chatWindowPrintText("Unable to connect to IP\n")
-        return False;
+        return False
 
     #TODO connect to selected IP here
-    chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
+    chatWindowPrintText("Attempting to connect to " + selectedIP+"\n")
     return True
 
 def closeProgram():
