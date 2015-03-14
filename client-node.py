@@ -102,42 +102,51 @@ server.bootstrap(known_nodes).addCallback(getIPs, server)
 #----------------------------------------------------------------------------------------------------------------------
 #Begin GUI code
 
-from twisted.internet.protocol import Factory, ClientFactory, Protocol
+from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Protocol
 from twisted.internet.endpoints import TCP4ClientEndpoint, TCP4ServerEndpoint, connectProtocol
 from sys import stdout
 
 # Simple Server recieve protocol. writes data to GUI
-class Echo(Protocol):
+class EchoServer(Protocol):
     def dataRecieved(selfself, data):
         chatWindowPrintText(data)
-class EchoFactory(Factory):
+class ServerFactory(ServerFactory):
+    protocol = EchoServer
+
     def buildProtocol(self, addr):
-        return Echo()
+        return EchoServer()
 
 # Set up server listening skills
-endpoint = TCP4ServerEndpoint(reactor, 5051)
-endpoint.listen(EchoFactory())
+#endpoint = TCP4ServerEndpoint(reactor, 9000)
+#endpoint.listen(ServerFactory())
+
+s = ServerFactory()
+reactor.listenTCP(9000, s)
 
 class EchoClient(Protocol):
-    def sendMessage(self, text):
-        self.transport.write(text)
+    def makeConnection(self, transport):
+        print("make Connection")
 
-class EchoClientFactory(ClientFactory):
+
+    def sendMessage(self, text):
+        print("called sendMessage")
+        #self.transport.write(text)
+
+class ClientFactory(ClientFactory):
+    protocol = EchoClient
+
     def startConnecting(self, connector):
         print("Starting to connect")
 
     def buildProtocol(self, addr):
         print("connected")
-        return Echo()
+        return EchoServer()
 
     def clientConnectionLost(self, connector, reason):
-        print("Lost Connection: " + str(reason))
+        print("Lost Connection")
 
     def clientConnectionLost(self, connector, reason):
-        print("Lost Failed: " + str(reason))
-
-def gotProtocol(p):
-    p.sendMessage("Hello")
+        print("Lost Failed")
 
 #point = TCP4ClientEndpoint(reactor, "localhost", 1025)
 #d = point.connect(EchoClientFactory())
@@ -151,7 +160,8 @@ selectedIP = NONE
 chatWindow = NONE
 textEntry = NONE
 
-clientService = EchoClient()
+clientFactory = NONE
+clientService = NONE
 
 # print givent text in the chat text window
 def chatWindowPrintText(text):
@@ -174,8 +184,9 @@ def sendChatMessage(event):
 
         chatWindowPrintText(message.lstrip())
         #TODO send message to connected parties in chat
-        #clientService.sendMessage(message)
-        gotProtocol(clientService)
+        if clientService is not NONE:
+            clientService.sendMessage(message)
+        #gotProtocol(clientService)
 
 # update the global selected IP address
 def updateSelected():
@@ -206,6 +217,7 @@ def refreshAvailIP():
 def connectToIP():
 
     global selectedIP
+    global clientService, clientFactory
     updateSelected()
 
     #TODO failure cases for ip addresses go here
@@ -216,11 +228,14 @@ def connectToIP():
     #TODO connect to selected IP here
     chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
 
-    #reactor.connectTCP(selectedIP, 5051, EchoClientFactory())
 
-    point = TCP4ClientEndpoint(reactor, selectedIP, 5051)
-    d = connectProtocol(point, clientService)#(EchoClientFactory())
-    d.addCallback(gotProtocol)
+    clientFactory = ClientFactory()
+    reactor.connectTCP(selectedIP, 8001, clientFactory)
+    clientService = EchoClient()
+    clientService.sendMessage("Connected?")
+    #point = TCP4ClientEndpoint(reactor, selectedIP, 5051)
+    #d = connectProtocol(point, clientService)
+    #d.addCallback(gotProtocol)
 
     return True
 
