@@ -180,10 +180,15 @@ class ClientFactory(ClientFactory):
 
     def buildProtocol(self, addr):
         print("ClientFactory: build Protocol")
-        return EchoServer()
+        s = EchoClient()
+        s.factory = self
+
+        return s
 
     def clientConnectionLost(self, connector, reason):
         print("ClientFactory: Connection Lost")
+    def clientConnectionFailed(self, connector, reason):
+        print("ClientFactory: Connection Failed")
 
 # list boxes containing contact info
 ConnectionsList = []
@@ -270,7 +275,7 @@ def connectToIP():
 
     if clientFactory is NONE or clientService is NONE:
         clientFactory = ClientFactory()
-        clientService = clientFactory.buildProtocol()
+        clientService = EchoClient()
     reactor.connectTCP('localhost', 9000, clientFactory)
     clientService.sendMessage("Connected?")
         #point = TCP4ClientEndpoint(reactor, selectedIP, 5051)
