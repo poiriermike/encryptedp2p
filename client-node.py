@@ -170,7 +170,7 @@ class EchoClient(Protocol):
 
     def sendMessage(self, text):
         print("Echo Client: called sendMessage")
-        self.transport.write(text)
+        #self.transport.write(text)
 
 class ClientFactory(ClientFactory):
     protocol = EchoClient
@@ -270,7 +270,7 @@ def connectToIP():
 
     if clientFactory is NONE or clientService is NONE:
         clientFactory = ClientFactory()
-        clientService = EchoClient()
+        clientService = clientFactory.buildProtocol()
     reactor.connectTCP('localhost', 9000, clientFactory)
     clientService.sendMessage("Connected?")
         #point = TCP4ClientEndpoint(reactor, selectedIP, 5051)
