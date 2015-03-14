@@ -139,25 +139,22 @@ server.bootstrap(known_nodes).addCallback(getIPs, server)
 
 from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Protocol
 from twisted.internet.endpoints import TCP4ClientEndpoint, TCP4ServerEndpoint, connectProtocol
-from sys import stdout
 
 # Simple Server recieve protocol. writes data to GUI
 class EchoServer(Protocol):
-    def dataRecieved(selfself, data):
+
+    def dataRecieved(self, data):
         print("Echo Server: data recieved: " + data)
         chatWindowPrintText(data)
 
-class ServerFactory(ServerFactory):
+class ServerFactory(Factory):
     protocol = EchoServer
 
     def buildProtocol(self, addr):
         print("Echo Server: build protocol")
         return EchoServer()
 
-# Set up server listening skills
-#endpoint = TCP4ServerEndpoint(reactor, 9000)
-#endpoint.listen(ServerFactory())
-
+#set up a TCP server listening for connections from other users
 s = ServerFactory()
 try:
     reactor.listenTCP(9000, s)
@@ -170,20 +167,22 @@ class EchoClient(Protocol):
 
     def sendMessage(self, text):
         print("Echo Client: called sendMessage")
-        #self.transport.write(text)
+        self.transport.write(text)
 
-class ClientFactory(ClientFactory):
+class ClientFactory(Factory):
     protocol = EchoClient
+    def __init__(self):
+        self.client = NONE
 
-    def startConnecting(self, connector):
+    def startedConnecting(self, connector):
         print("ClientFactory: Starting to connect")
 
     def buildProtocol(self, addr):
         print("ClientFactory: build Protocol")
-        s = EchoClient()
-        s.factory = self
-
-        return s
+        c = EchoClient()
+        c.factory = self
+        self.client = c
+        return c
 
     def clientConnectionLost(self, connector, reason):
         print("ClientFactory: Connection Lost")
@@ -273,14 +272,12 @@ def connectToIP():
     #TODO connect to selected IP here
     chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
 
-    if clientFactory is NONE or clientService is NONE:
+    #TODO make unbroken
+    if clientFactory is NONE:
         clientFactory = ClientFactory()
-        clientService = EchoClient()
     reactor.connectTCP('localhost', 9000, clientFactory)
-    clientService.sendMessage("Connected?")
-        #point = TCP4ClientEndpoint(reactor, selectedIP, 5051)
-        #d = connectProtocol(point, clientService)
-        #d.addCallback(gotProtocol)
+    clientService = EchoClient()
+    #clientService.sendMessage("Connected?")
 
     return True
 
@@ -338,10 +335,6 @@ def initializeGUI():
 
     connectButton = Button(root, text="Connect", command=connectToIP)
     connectButton.pack(side=RIGHT)
-
-
-
-    #listB.pack()
 
     return root
 
