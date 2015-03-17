@@ -9,6 +9,7 @@ try: #python 2
     from Tkinter import *
 except ImportError: #python 3
     from tkinter import *
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Importing and file handling section
 
@@ -62,11 +63,9 @@ elif not args.bsip and not args.bsport:
                     log.err("Line not formatted correctly. Ignoring.")
                 elif len(bsid) == 2:
                     known_nodes.append([bsid[0], bsid[1]])
-
 else:
     log.msg("Bootstrapping IP " + args.bsip + " and port " + args.bsport)
     known_nodes = [(args.bsip, int(args.bsport))]
-
 
 #Logging
 if args.log:
@@ -82,6 +81,7 @@ if args.port:
 client_port = 4040
 if args.client:
     client_port = int(args.client)
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Begin Support Code
 
@@ -123,7 +123,7 @@ if args.save:
 # The addCallback can be added to many of the server functions, and can be used to chain call functions
 server.bootstrap(known_nodes).addCallback(getIPs, server)
 
-#----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #Begin GUI code
 
 from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Protocol
