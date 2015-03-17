@@ -10,90 +10,79 @@ try: #python 2
 except ImportError: #python 3
     from tkinter import *
 
+# ----------------------------------------------------------------------------------------------------------------------
+# Importing and file handling section
+
 backup = "client_state.bak"
-default_port = 5050
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
 # implement it how we were discussing last week.
-known_nodes = [("127.0.0.1", 5050)]
+known_nodes = []
 
 # list boxes containing contact info
-Contacts = [{"username": "sample", "key": "key_value", "ip": "1.1.1.1", "port": "3000", "online": False}]
+# Contacts takes the form of {"username": "sample", "key": "key_value", "ip": "1.1.1.1", "port": "3000", "online": False}
+Contacts = []
+
+# Import settings from the configuration file
+import config
 
 # This is a simple node on the network.
 # Some fancy argument parsing. cause I'm cool like that.
 parser = argparse.ArgumentParser()
-parser.add_argument('-p', '--port', dest='port', required=True, type=str, action='store', default=False, help='Set the client port.')
-parser.add_argument('-f', '--file', dest='file', type=str, action='store', help='File with a list of known hosts.')
+parser.add_argument('-p', '--port', dest='port', required=True, type=str, action='store', default=False, help='Set the kademlia port. Overrides the config file.')
 parser.add_argument('-l', '--log', dest='log', type=str, action='store', default=False, help='Specify a log file to output to. Default is stdout.')
-parser.add_argument('-b', '--bootstrap', dest='bootstrap', action='store_true', default=False, help='Set this flag if the you want to specify a bootstrap IP and port')
-parser.add_argument('-s', '--save', dest='save', action='store_true', default=False, help='Specify whether you want to save a state')
-parser.add_argument('-I', '--bsip', dest='bsip', type=str, action='store', default=False, help='Set the bootstrap server IP.')
-parser.add_argument('-P', '--bsport', dest='bsport', type=str, action='store', default=False, help='Set the bootstrap server port.')
+parser.add_argument('-s', '--save', dest='save', action='store_true', default=False, help='Specify whether you want to save a state. Overrides the config file.')
+parser.add_argument('-I', '--bsip', dest='bsip', type=str, action='store', default=False, help='Set the bootstrap server IP. Overrides the config file.')
+parser.add_argument('-P', '--bsport', dest='bsport', type=str, action='store', default=False, help='Set the bootstrap server port. Overrides the config file.')
 parser.add_argument('-N', '--nogui', dest='nogui', action='store_true', default=False, help='Do not run the GUI part of the node')
+parser.add_argument('-c', '--client', dest='client', type=int, action='store', default=False, help='Set up the port for the client. Overrides the config file.')
+parser.add_argument('-r', '--refresh', dest='refresh', action='store_true', default=False, help='Automatically refresh the contact list.')
 args = parser.parse_args()
 
 # Import the contacts from the contact file
-# TODO: Consider making the contact file settable from the command line
-if os.path.isfile("contacts.txt"):
-    with open("contacts.txt", "r") as f:
+if os.path.isfile(config.contacts_file):
+    with open(config.contacts_file, "r") as f:
         for line in f:
             info = line.split()
             if len(info) != 0:
-                Contacts.append({"username": info[1], "key": info[0], "ip":None, "port": None, "online": False})
+                Contacts.append({"username": info[1], "key": info[0], "ip": None, "port": None, "online": False})
 else:
-    with open("contacts.txt", "w"):
+    with open(config.contacts_file, "w"):
         log.msg("No contacts found. Adding contact file.")
 
-if args.bootstrap:
-    if not args.bsip or not args.bsport:
-        print("Error. Missing ip or port argument")
-        exit(1)
-    # This should be a log. Once I figure out how to
-    print("Bootstrapping IP " + args.bsip + " and port " + args.bsport)
-    known_nodes = [(args.bsip, int(args.bsport))]
-else:
-    if args.bsip or args.bsport:
-        print("Warning. The values for IP and port input will not be taken unless the -b flag is set")
-
-if args.file:
-    if os.path.isfile(args.file):
-        known_nodes = []
-        with open(args.file, "r") as f:
+# Set up the Kademlia bootstrapping
+if (args.bsip and not args.bsport) or (not args.bsip and args.bsport):
+    log.err("Error. Missing ip or port argument")
+    exit(1)
+elif not args.bsip and not args.bsport:
+    if os.path.isfile(config.bootstrap_file):
+        with open(config.bootstrap_file, "r") as f:
             for line in f:
-                l = line.split()
-                if len(l) == 2:
-                    known_nodes.append((l[0], int(default_port)))
-                elif len(l) == 1:
-                    known_nodes.append((l[0], int(l[1])))
-                else:
-                    print("Warning. '" + line + "' is not a valid ip/port pair")
+                bsid = line.split()
+                if len(bsid) != 2 or len(bsid) != 0:
+                    log.err("Line not formatted correctly. Ignoring.")
+                elif len(bsid) == 2:
+                    known_nodes.append([bsid[0], bsid[1]])
+else:
+    log.msg("Bootstrapping IP " + args.bsip + " and port " + args.bsport)
+    known_nodes = [(args.bsip, int(args.bsport))]
 
 #Logging
-# Logging and fun stuff like that
 if args.log:
     l = open(args.log, "a")
     log.startLogging(l)
 else:
     log.startLogging(sys.stdout)
 
-'''
-def print_result(result):
-    print("Value found=" + str(result))
+kad_port = config.kademlia_port
+if args.port:
+    kad_port = args.port
 
-def get(result, server):
-    print("Grabbing the result from the server")
-    # Gets the specified key/value pair from the server, then it will call the print_result function with the retrieved
-    # value
-    server.get(socket.gethostname()).addCallback(print_result)
+client_port = 4040
+if args.client:
+    client_port = int(args.client)
 
-# Sets the value of the hostname to it's IP address according to the other nodes in the network
-def set(stuff, server):
-    print("STUFF " + str(stuff))
-    server.set(socket.gethostname(), stuff).addCallback(get, server)
-'''
-
-#---------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Begin Support Code
 
 # Sets the value of the hostname to it's IP address according to the other nodes in the network
@@ -119,22 +108,22 @@ def getIPs(stuff, morestuff):
     server.inetVisibleIP().addCallback(set, server)
 
 # Starts setting up the local server to run
-print("Setting up listening server")
+log.msg("Setting up listening server")
 server = Server()
-server.listen(int(args.port))
+server.listen(int(kad_port))
 
 if os.path.isfile(backup):
     server.loadState(backup)
 
+# Backup every 5 minutes
 if args.save:
-    # Backup every 5 minutes
     if os.path.exists(backup):
         server.saveStateRegularly(backup, 300)
 
 # The addCallback can be added to many of the server functions, and can be used to chain call functions
 server.bootstrap(known_nodes).addCallback(getIPs, server)
 
-#----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #Begin GUI code
 
 from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Protocol
@@ -146,7 +135,7 @@ import unicodedata
 
 class EchoServerProtocol(basic.LineReceiver):
     def lineReceived(self, line):
-        print("Server Recieved: " + line)
+        log.msg("Server Recieved: " + line)
         factory = protocol.ClientFactory()
         factory.protocol = EchoClientProtocol
 
@@ -156,7 +145,7 @@ class EchoClientProtocol(basic.LineReceiver):
     def connectionMade(self):
         self.setName("Username")
 
-        print("Client Send: " + self.name + " Connected")
+        log.msg("Client Send: " + self.name + " Connected")
         self.sendLine(self.name + " Connected\n")
 
 
@@ -165,7 +154,7 @@ class EchoClientProtocol(basic.LineReceiver):
             self.sendLine('That username is in use!\r\nUsername: ')
             self.setName(str(name+'*'))
         elif ' ' in name:
-            sself.sendLine('No spaces are allowed in usernames!\r\nUsername: ')
+            self.sendLine('No spaces are allowed in usernames!\r\nUsername: ')
         elif name == '':
             self.sendLine('You must enter a username!\r\nUsername: ')
         else:
@@ -173,7 +162,7 @@ class EchoClientProtocol(basic.LineReceiver):
             self.name = name
 
     def sendMessage(self, text):
-        #print("Client Send: "+text)
+        #log.msg("Client Send: "+text)
 
         #Send line does not allow unicode strings, so we convert it before sending
         normalized = unicodedata.normalize('NFKD', text).encode('ascii','ignore')
@@ -188,16 +177,16 @@ class ClientFactory(Factory):
     protocol = EchoClientProtocol
 
     def startedConnecting(self, connector):
-        print("ClientFactory: Starting to connect")
+        log.msg("ClientFactory: Starting to connect")
 
     def buildProtocol(self, addr):
-        print("ClientFactory: build Protocol")
+        log.msg("ClientFactory: build Protocol")
         return EchoClientProtocol(addr=addr,users=self.users)
 
     def clientConnectionLost(self, connector, reason):
-        print("ClientFactory: Connection Lost")
+        log.msg("ClientFactory: Connection Lost")
     def clientConnectionFailed(self, connector, reason):
-        print("ClientFactory: Connection Failed")
+        log.msg("ClientFactory: Connection Failed")
 
     def __init__(self):
         self.users = {}
@@ -360,9 +349,9 @@ def initializeGUI():
 factory = protocol.ServerFactory()
 factory.protocol = EchoServerProtocol
 try:
-    reactor.listenTCP(9000, factory)
+    reactor.listenTCP(client_port, factory)
 except: #won't break absolutly everything if you run two instances on one machine
-    print("Error starting Chat Server: port in use")
+    log.err("Error starting Chat Server: port in use")
 
 #set up the gui root and connect it to the reactor
 if not args.nogui:
@@ -370,8 +359,9 @@ if not args.nogui:
     tksupport.install(root)
 
 #Will automatically refresh the contacts every minute
-#contact_refresh_loop = task.LoopingCall(refreshAvailIP)
-#contact_refresh_loop.start(10)
+if args.refresh:
+    contact_refresh_loop = task.LoopingCall(refreshAvailIP)
+    contact_refresh_loop.start(10)
 
 # starts the execution of the server code
 reactor.run()
