@@ -138,13 +138,19 @@ server.bootstrap(known_nodes).addCallback(getIPs, server)
 #Begin GUI code
 
 from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Protocol
-#from twisted.internet.endpoints import TCP4ClientEndpoint, TCP4ServerEndpoint, connectProtocol
 
 from twisted.internet import protocol, reactor, stdio
 from twisted.protocols import basic
 import unicodedata
 
 class EchoServerProtocol(basic.LineReceiver):
+
+    def connectionMade(self):
+        global clientFactory
+        if clientFactory is NONE:
+            clientFactory = ClientFactory()
+        #reactor.connectTCP('localhost', 9000, clientFactory)
+
     def lineReceived(self, line):
         print("Server Recieved: " + line)
         factory = protocol.ClientFactory()
