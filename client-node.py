@@ -51,7 +51,7 @@ else:
 
 # Set up the Kademlia bootstrapping
 if (args.bsip and not args.bsport) or (not args.bsip and args.bsport):
-    print("Error. Missing ip or port argument")
+    log.err("Error. Missing ip or port argument")
     exit(1)
 elif not args.bsip and not args.bsport:
     if os.path.isfile(config.bootstrap_file):
@@ -64,7 +64,7 @@ elif not args.bsip and not args.bsport:
                     known_nodes.append([bsid[0], bsid[1]])
 
 else:
-    print("Bootstrapping IP " + args.bsip + " and port " + args.bsport)
+    log.msg("Bootstrapping IP " + args.bsip + " and port " + args.bsport)
     known_nodes = [(args.bsip, int(args.bsport))]
 
 
@@ -82,7 +82,7 @@ if args.port:
 client_port = 4040
 if args.client:
     client_port = int(args.client)
-#----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Begin Support Code
 
 # Sets the value of the hostname to it's IP address according to the other nodes in the network
@@ -108,7 +108,7 @@ def getIPs(stuff, morestuff):
     server.inetVisibleIP().addCallback(set, server)
 
 # Starts setting up the local server to run
-print("Setting up listening server")
+log.msg("Setting up listening server")
 server = Server()
 server.listen(int(kad_port))
 
@@ -135,7 +135,7 @@ import unicodedata
 
 class EchoServerProtocol(basic.LineReceiver):
     def lineReceived(self, line):
-        print("Server Recieved: " + line)
+        log.msg("Server Recieved: " + line)
         factory = protocol.ClientFactory()
         factory.protocol = EchoClientProtocol
 
@@ -145,7 +145,7 @@ class EchoClientProtocol(basic.LineReceiver):
     def connectionMade(self):
         self.setName("Username")
 
-        print("Client Send: " + self.name + " Connected")
+        log.msg("Client Send: " + self.name + " Connected")
         self.sendLine(self.name + " Connected\n")
 
 
@@ -162,7 +162,7 @@ class EchoClientProtocol(basic.LineReceiver):
             self.name = name
 
     def sendMessage(self, text):
-        #print("Client Send: "+text)
+        #log.msg("Client Send: "+text)
 
         #Send line does not allow unicode strings, so we convert it before sending
         normalized = unicodedata.normalize('NFKD', text).encode('ascii','ignore')
@@ -177,16 +177,16 @@ class ClientFactory(Factory):
     protocol = EchoClientProtocol
 
     def startedConnecting(self, connector):
-        print("ClientFactory: Starting to connect")
+        log.msg("ClientFactory: Starting to connect")
 
     def buildProtocol(self, addr):
-        print("ClientFactory: build Protocol")
+        log.msg("ClientFactory: build Protocol")
         return EchoClientProtocol(addr=addr,users=self.users)
 
     def clientConnectionLost(self, connector, reason):
-        print("ClientFactory: Connection Lost")
+        log.msg("ClientFactory: Connection Lost")
     def clientConnectionFailed(self, connector, reason):
-        print("ClientFactory: Connection Failed")
+        log.msg("ClientFactory: Connection Failed")
 
     def __init__(self):
         self.users = {}
@@ -349,9 +349,9 @@ def initializeGUI():
 factory = protocol.ServerFactory()
 factory.protocol = EchoServerProtocol
 try:
-    reactor.listenTCP(9000, factory)
+    reactor.listenTCP(client_port, factory)
 except: #won't break absolutly everything if you run two instances on one machine
-    print("Error starting Chat Server: port in use")
+    log.err("Error starting Chat Server: port in use")
 
 #set up the gui root and connect it to the reactor
 if not args.nogui:
