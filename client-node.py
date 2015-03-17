@@ -127,13 +127,22 @@ server.bootstrap(known_nodes).addCallback(getIPs, server)
 #Begin GUI code
 
 from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Protocol
-#from twisted.internet.endpoints import TCP4ClientEndpoint, TCP4ServerEndpoint, connectProtocol
 
 from twisted.internet import protocol, reactor, stdio
 from twisted.protocols import basic
 import unicodedata
 
+connectPort = client_port
+
 class EchoServerProtocol(basic.LineReceiver):
+
+    def connectionMade(self):
+        global clientFactory
+        if clientFactory is NONE:
+            clientFactory = ClientFactory()
+        peerInfo = self.transport.getPeer()
+        reactor.connectTCP(peerInfo[1], peerInfo[2], clientFactory)
+
     def lineReceived(self, line):
         log.msg("Server Recieved: " + line)
         factory = protocol.ClientFactory()
@@ -245,7 +254,7 @@ def updateSelected():
 def get_contact_location(result, contact):
     if result is not None:
         contact['ip'] = result[0][0]
-        contact['port'] = result[0][1]
+        contact['port'] = result[0][1] #TODO causing exception?
 
 # Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
 def refreshAvailIP():
@@ -254,15 +263,15 @@ def refreshAvailIP():
     for contact in Contacts:
         # This adds the get_ip function to the server callback list. Will do so for each contact
         server.get(contact['key'] + contact['username']).addCallback(get_contact_location, contact)
-    #print(Contacts)
 
     #clear the listboxes in the GUI of old values
     ConnectionsList[0].delete(0, END)
     ConnectionsList[1].delete(0, END)
 
-    # add the new values to the GUI
-    ConnectionsList[0].insert(END, contact['username'])
-    ConnectionsList[1].insert(END, contact['ip'])
+    for contact in Contacts:
+        # add the new values to the GUI
+        ConnectionsList[0].insert(END, contact['username'])
+        ConnectionsList[1].insert(END, contact['ip'])
 
 
 # connect to the selected IP address
