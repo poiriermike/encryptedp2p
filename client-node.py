@@ -138,102 +138,61 @@ server.bootstrap(known_nodes).addCallback(getIPs, server)
 #Begin GUI code
 
 from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Protocol
-from twisted.internet.endpoints import TCP4ClientEndpoint, TCP4ServerEndpoint, connectProtocol
+#from twisted.internet.endpoints import TCP4ClientEndpoint, TCP4ServerEndpoint, connectProtocol
 
 from twisted.internet import protocol, reactor, stdio
 from twisted.protocols import basic
 import unicodedata
 
-class SomeServerProtocol(basic.LineReceiver):
+class EchoServerProtocol(basic.LineReceiver):
     def lineReceived(self, line):
-        print("Server Recieved:" + line)
-        #host, port = line.split()
-        #port = int(port)
+        print("Server Recieved: " + line)
         factory = protocol.ClientFactory()
-        factory.protocol = SomeClientProtocol
-        #reactor.connectTCP(host, port, factory)
+        factory.protocol = EchoClientProtocol
 
-class SomeClientProtocol(basic.LineReceiver):
+        chatWindowPrintText(line)
+
+class EchoClientProtocol(basic.LineReceiver):
     def connectionMade(self):
-        print("Client Send: Hello!")
-        self.sendLine("Hello!")
-        self.setName("SampleName")
-        #self.transport.loseConnection()
+        self.setName("Username")
+
+        print("Client Send: " + self.name + " Connected")
+        self.sendLine(self.name + " Connected\n")
 
 
     def setName(self, name):
         if self.users.has_key(name) or name.lower() == 'server':
-            self.transport.write('That username is in use!\r\nUsername: ')
+            self.sendLine('That username is in use!\r\nUsername: ')
             self.setName(str(name+'*'))
         elif ' ' in name:
-            self.transport.write('No spaces are allowed in usernames!\r\nUsername: ')
+            sself.sendLine('No spaces are allowed in usernames!\r\nUsername: ')
         elif name == '':
-            self.transport.write('You must enter a username!\r\nUsername: ')
+            self.sendLine('You must enter a username!\r\nUsername: ')
         else:
             self.users[name] = self
             self.name = name
 
     def sendMessage(self, text):
-        print("Client Send: "+text)
+        #print("Client Send: "+text)
 
         #Send line does not allow unicode strings, so we convert it before sending
         normalized = unicodedata.normalize('NFKD', text).encode('ascii','ignore')
-        self.sendLine(normalized)
+        self.sendLine(self.name + ": " + normalized)
 
     def __init__(self,addr=None,users=None):
         self.name = None
         self.addr = addr
         self.users = users
 
-factory = protocol.ServerFactory()
-factory.protocol = SomeServerProtocol
-try:
-    reactor.listenTCP(9000, factory)
-except:
-    print("Error starting server: port in use")
-
-
-#stdio.StandardIO(SomeClientProtocol())
-
-'''
-# Simple Server recieve protocol. writes data to GUI
-class EchoServer(Protocol):
-
-    def dataRecieved(self, data):
-        print("Echo Server: data recieved: " + data)
-        chatWindowPrintText(data)
-
-class ServerFactory(Factory):
-    protocol = EchoServer
-
-    def buildProtocol(self, addr):
-        print("Echo Server: build protocol")
-        return EchoServer()
-
-#set up a TCP server listening for connections from other users
-s = ServerFactory()
-try:
-    reactor.listenTCP(9000, s)
-except:
-    pass #reactor.listenTCP(9010, s)
-
-class EchoClient(Protocol):
-    def makeConnection(self, transport):
-        print("Echo Client: make Connection")
-
-    def sendMessage(self, text):
-        print("Echo Client: called sendMessage")
-        self.transport.write(text)
-'''
 class ClientFactory(Factory):
-    protocol = SomeClientProtocol
+    protocol = EchoClientProtocol
 
     def startedConnecting(self, connector):
         print("ClientFactory: Starting to connect")
 
     def buildProtocol(self, addr):
         print("ClientFactory: build Protocol")
-        return SomeClientProtocol(addr=addr,users=self.users)
+        return EchoClientProtocol(addr=addr,users=self.users)
 
     def clientConnectionLost(self, connector, reason):
         print("ClientFactory: Connection Lost")
@@ -244,7 +203,7 @@ class ClientFactory(Factory):
         self.users = {}
         self.name = None
 
-# list boxes containing contact info
+# list boxes in GUI for displaying and selecting contact info
 ConnectionsList = []
 
 selectedIP = NONE
@@ -252,7 +211,6 @@ chatWindow = NONE
 textEntry = NONE
 
 clientFactory = NONE
-#clientService = NONE
 
 # print givent text in the chat text window
 def chatWindowPrintText(text):
@@ -277,9 +235,12 @@ def sendChatMessage(event):
 
         message = message.lstrip()
         chatWindowPrintText(message)
-        #TODO send message to connected parties in chat
+
+        #Send the message to other users
         if clientFactory is not NONE:
-            for name in clientFactory.users : clientFactory.users[name].sendMessage(message)
+            for name in clientFactory.users:
+                #TODO avoid sending the message to ourselves
+                clientFactory.users[name].sendMessage(message)
 
 
 # update the global selected IP address
@@ -327,15 +288,14 @@ def connectToIP():
         chatWindowPrintText("Unable to connect to IP\n")
         return False
 
-    #TODO connect to selected IP here
     chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
 
-    #TODO make unbroken
+    #TODO make unbroken (might be doing multiple connects to same IP etc.)
     if clientFactory is NONE:
         clientFactory = ClientFactory()
+    #TODO don't use localhost(change when we have populated IP list)
+    #TODO don't use fixed port
     reactor.connectTCP('localhost', 9000, clientFactory)
-    #clientService = EchoClient()
-    #clientService.sendMessage("Connected?")
 
     return True
 
@@ -395,6 +355,14 @@ def initializeGUI():
     connectButton.pack(side=RIGHT)
 
     return root
+
+#start a server for the chat service and GUI
+factory = protocol.ServerFactory()
+factory.protocol = EchoServerProtocol
+try:
+    reactor.listenTCP(9000, factory)
+except: #won't break absolutly everything if you run two instances on one machine
+    print("Error starting Chat Server: port in use")
 
 #set up the gui root and connect it to the reactor
 if not args.nogui:
