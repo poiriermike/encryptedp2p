@@ -29,7 +29,7 @@ import config
 # This is a simple node on the network.
 # Some fancy argument parsing. cause I'm cool like that.
 parser = argparse.ArgumentParser()
-parser.add_argument('-p', '--port', dest='port', required=True, type=str, action='store', default=False, help='Set the kademlia port. Overrides the config file.')
+parser.add_argument('-p', '--port', dest='port', type=str, action='store', default=False, help='Set the kademlia port. Overrides the config file.')
 parser.add_argument('-l', '--log', dest='log', type=str, action='store', default=False, help='Specify a log file to output to. Default is stdout.')
 parser.add_argument('-s', '--save', dest='save', action='store_true', default=False, help='Specify whether you want to save a state. Overrides the config file.')
 parser.add_argument('-I', '--bsip', dest='bsip', type=str, action='store', default=False, help='Set the bootstrap server IP. Overrides the config file.')
