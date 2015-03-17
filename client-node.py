@@ -140,6 +140,62 @@ server.bootstrap(known_nodes).addCallback(getIPs, server)
 from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Protocol
 from twisted.internet.endpoints import TCP4ClientEndpoint, TCP4ServerEndpoint, connectProtocol
 
+from twisted.internet import protocol, reactor, stdio
+from twisted.protocols import basic
+import unicodedata
+
+class SomeServerProtocol(basic.LineReceiver):
+    def lineReceived(self, line):
+        print("Server Recieved:" + line)
+        #host, port = line.split()
+        #port = int(port)
+        factory = protocol.ClientFactory()
+        factory.protocol = SomeClientProtocol
+        #reactor.connectTCP(host, port, factory)
+
+class SomeClientProtocol(basic.LineReceiver):
+    def connectionMade(self):
+        print("Client Send: Hello!")
+        self.sendLine("Hello!")
+        self.setName("SampleName")
+        #self.transport.loseConnection()
+
+
+    def setName(self, name):
+        if self.users.has_key(name) or name.lower() == 'server':
+            self.transport.write('That username is in use!\r\nUsername: ')
+            self.setName(str(name+'*'))
+        elif ' ' in name:
+            self.transport.write('No spaces are allowed in usernames!\r\nUsername: ')
+        elif name == '':
+            self.transport.write('You must enter a username!\r\nUsername: ')
+        else:
+            self.users[name] = self
+            self.name = name
+
+    def sendMessage(self, text):
+        print("Client Send: "+text)
+
+        #Send line does not allow unicode strings, so we convert it before sending
+        normalized = unicodedata.normalize('NFKD', text).encode('ascii','ignore')
+        self.sendLine(normalized)
+
+    def __init__(self,addr=None,users=None):
+        self.name = None
+        self.addr = addr
+        self.users = users
+
+factory = protocol.ServerFactory()
+factory.protocol = SomeServerProtocol
+try:
+    reactor.listenTCP(9000, factory)
+except:
+    print("Error starting server: port in use")
+
+
+#stdio.StandardIO(SomeClientProtocol())
+
+'''
 # Simple Server recieve protocol. writes data to GUI
 class EchoServer(Protocol):
 
@@ -168,26 +224,25 @@ class EchoClient(Protocol):
     def sendMessage(self, text):
         print("Echo Client: called sendMessage")
         self.transport.write(text)
-
+'''
 class ClientFactory(Factory):
-    protocol = EchoClient
-    def __init__(self):
-        self.client = NONE
+    protocol = SomeClientProtocol
 
     def startedConnecting(self, connector):
         print("ClientFactory: Starting to connect")
 
     def buildProtocol(self, addr):
         print("ClientFactory: build Protocol")
-        c = EchoClient()
-        c.factory = self
-        self.client = c
-        return c
+        return SomeClientProtocol(addr=addr,users=self.users)
 
     def clientConnectionLost(self, connector, reason):
         print("ClientFactory: Connection Lost")
     def clientConnectionFailed(self, connector, reason):
         print("ClientFactory: Connection Failed")
+
+    def __init__(self):
+        self.users = {}
+        self.name = None
 
 # list boxes containing contact info
 ConnectionsList = []
@@ -197,7 +252,7 @@ chatWindow = NONE
 textEntry = NONE
 
 clientFactory = NONE
-clientService = NONE
+#clientService = NONE
 
 # print givent text in the chat text window
 def chatWindowPrintText(text):
@@ -214,14 +269,17 @@ def clearText(event):
 #Send a message through the GUI chat
 def sendChatMessage(event):
     global textEntry
+    global clientFactory
+
     if event.keysym == 'Return':
         message = textEntry.get('0.0', END)
         textEntry.delete('0.0', END)
 
-        chatWindowPrintText(message.lstrip())
+        message = message.lstrip()
+        chatWindowPrintText(message)
         #TODO send message to connected parties in chat
-        if clientService is not NONE:
-            clientService.sendMessage(message)
+        if clientFactory is not NONE:
+            for name in clientFactory.users : clientFactory.users[name].sendMessage(message)
 
 
 # update the global selected IP address
@@ -276,7 +334,7 @@ def connectToIP():
     if clientFactory is NONE:
         clientFactory = ClientFactory()
     reactor.connectTCP('localhost', 9000, clientFactory)
-    clientService = EchoClient()
+    #clientService = EchoClient()
     #clientService.sendMessage("Connected?")
 
     return True
@@ -344,8 +402,8 @@ if not args.nogui:
     tksupport.install(root)
 
 #Will automatically refresh the contacts every minute
-contact_refresh_loop = task.LoopingCall(refreshAvailIP)
-contact_refresh_loop.start(10)
+#contact_refresh_loop = task.LoopingCall(refreshAvailIP)
+#contact_refresh_loop.start(10)
 
 # starts the execution of the server code
 reactor.run()
