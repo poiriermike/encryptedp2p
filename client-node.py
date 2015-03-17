@@ -29,13 +29,13 @@ import config
 # This is a simple node on the network.
 # Some fancy argument parsing. cause I'm cool like that.
 parser = argparse.ArgumentParser()
-parser.add_argument('-p', '--port', dest='port', required=True, type=str, action='store', default=False, help='Set the client port.')
+parser.add_argument('-p', '--port', dest='port', required=True, type=str, action='store', default=False, help='Set the kademlia port. Overrides the config file.')
 parser.add_argument('-l', '--log', dest='log', type=str, action='store', default=False, help='Specify a log file to output to. Default is stdout.')
-parser.add_argument('-s', '--save', dest='save', action='store_true', default=False, help='Specify whether you want to save a state')
-parser.add_argument('-I', '--bsip', dest='bsip', type=str, action='store', default=False, help='Set the bootstrap server IP.')
-parser.add_argument('-P', '--bsport', dest='bsport', type=str, action='store', default=False, help='Set the bootstrap server port.')
+parser.add_argument('-s', '--save', dest='save', action='store_true', default=False, help='Specify whether you want to save a state. Overrides the config file.')
+parser.add_argument('-I', '--bsip', dest='bsip', type=str, action='store', default=False, help='Set the bootstrap server IP. Overrides the config file.')
+parser.add_argument('-P', '--bsport', dest='bsport', type=str, action='store', default=False, help='Set the bootstrap server port. Overrides the config file.')
 parser.add_argument('-N', '--nogui', dest='nogui', action='store_true', default=False, help='Do not run the GUI part of the node')
-parser.add_argument('-c', '--client', dest='client', type=int, action='store', default=False, help='Set up the port for the client.')
+parser.add_argument('-c', '--client', dest='client', type=int, action='store', default=False, help='Set up the port for the client. Overrides the config file.')
 parser.add_argument('-r', '--refresh', dest='refresh', action='store_true', default=False, help='Automatically refresh the contact list.')
 args = parser.parse_args()
 
