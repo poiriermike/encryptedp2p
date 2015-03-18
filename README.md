@@ -57,16 +57,37 @@ Run this because reasons 'sudo pip install rpcudp'
 install tkinter (needed for GUI) 'sudo apt-get install python-tk'
 
 Copy our code to a run directory:
-Specifically, client-node.py, dedicated-server.py, and the kademelia folder from our github repository.
+Specifically, client-node.py, dedicated-server.py, the config.py (optional), and the kademelia folder from our github repository.
 
 Make sure to maintain the directory structure. The cilent-node and dedicated-server should be in the same directory as the kademlia server. 
+
+You should also have two text files in your run directory. An identity.txt file that contains your public key as well as your username, space separated.
+Plus a contacts.txt file containing the public keys and usernames of your contacts/friends, again space separated.
+
+Optionally, you can have a bootstrap.txt file with space separated IP/port pairs that will supply the client with a list 
+of bootstrappable nodes to check. 
 
 -Run-
 
 Run 'python dedicated-server.py -p \<port\>' on at least one network node.
 This starts a server meant to get the initial system running. After that, the client nodes should be able to connect to each other.
 
-Run 'python client-node.py' on each network node. Note. There are a number of arguments to this file. Including the option to bootstrap to another server from the command line, or a list of bootstrappable nodes from a file.
+To run your chat client. Run the client-node.py file. 
+
+python client-node.py
+
+There are a number of options you can use to run the client node. Those annotated with a * will override the value set in your config.txt 
+file:
+
+- -p <the port you are running your kademlia server on>*
+- -I <A bootstrappable IP. Needs to be paried with a -P>*
+- -P <A bootstarppable port for the IP above.>*
+- -l <A log file to save to (defaults to stdout)>*
+- -N <An option to run the client without a GUI (currently not functional WITHOUT a GUI)>
+- -c <Port to run the chat client on.>*
+- -r <Refresh your contacts list every 10 seconds (otherwise has to be done manually)>
+
+Currently the chat part of the system does not support NAT traversal. We are currently looking at possible solutions.
 
 ----------------------------------------------------------------------------------------------------------------------------
 -The Future-
