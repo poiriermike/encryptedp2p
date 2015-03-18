@@ -132,15 +132,12 @@ from twisted.internet import protocol, reactor, stdio
 from twisted.protocols import basic
 import unicodedata
 
-connectPort = client_port
 
 class EchoServerProtocol(basic.LineReceiver):
 
     def connectionMade(self):
         global clientFactory
-        if clientFactory is NONE:
-            clientFactory = ClientFactory()
-        peerInfo = self.transport.getPeer()
+        peerInfo = self.transport.getPeer() #Untested - may not work
         reactor.connectTCP(peerInfo[1], peerInfo[2], clientFactory)
 
     def lineReceived(self, line):
@@ -205,6 +202,7 @@ class ClientFactory(Factory):
 ConnectionsList = []
 
 selectedIP = NONE
+selectedContact = NONE
 chatWindow = NONE
 textEntry = NONE
 
@@ -245,8 +243,10 @@ def sendChatMessage(event):
 def updateSelected():
 
     global selectedIP
+    global selectedContact
     #TODO make this more robust/usefull etc
     selectedIP = ConnectionsList[1].get(ACTIVE)
+    selectedContact = Contacts[0] #TODO find the correct contact here
 
 
 # Takes the result from the DHT and parses out the IP and port
@@ -277,7 +277,7 @@ def refreshAvailIP():
 # connect to the selected IP address
 def connectToIP():
 
-    global selectedIP
+    global selectedIP, selectedContact
     global clientService, clientFactory
     updateSelected()
 
@@ -287,13 +287,7 @@ def connectToIP():
         return False
 
     chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
-
-    #TODO make unbroken (might be doing multiple connects to same IP etc.)
-    if clientFactory is NONE:
-        clientFactory = ClientFactory()
-    #TODO don't use localhost(change when we have populated IP list)
-    #TODO don't use fixed port
-    reactor.connectTCP('localhost', 9000, clientFactory)
+    reactor.connectTCP(selectedContact['ip'], selectedContact['port'], clientFactory)
 
     return True
 
@@ -361,6 +355,9 @@ try:
     reactor.listenTCP(client_port, factory)
 except: #won't break absolutly everything if you run two instances on one machine
     log.err("Error starting Chat Server: port in use")
+
+# set up the client gui connection service
+clientFactory = ClientFactory()
 
 #set up the gui root and connect it to the reactor
 if not args.nogui:
