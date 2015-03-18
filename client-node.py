@@ -16,11 +16,9 @@ except ImportError: #python 3
 backup = "client_state.bak"
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
-# implement it how we were discussing last week.
 known_nodes = []
 
-# list boxes containing contact info
-# Contacts takes the form of {"username": "sample", "key": "key_value", "ip": "1.1.1.1", "port": "3000", "online": False}
+# Contacts takes the form of {"username": "sample", "key": "key_value", "ip": "1.1.1.1", "port": "3000", "clientport": "3001", "online": False}
 Contacts = []
 
 # Import settings from the configuration file
@@ -45,7 +43,7 @@ if os.path.isfile(config.contacts_file):
         for line in f:
             info = line.split()
             if len(info) != 0:
-                Contacts.append({"username": info[1], "key": info[0], "ip": None, "port": None, "online": False})
+                Contacts.append({"username": info[1], "key": info[0], "ip": None, "port": None, "clientport": None, "online": False})
 else:
     with open(config.contacts_file, "w"):
         log.msg("No contacts found. Adding contact file.")
@@ -74,19 +72,21 @@ if args.log:
 else:
     log.startLogging(sys.stdout)
 
-kad_port = config.kademlia_port
+kad_port = int(config.kademlia_port)
 if args.port:
-    kad_port = args.port
+    kad_port = int(args.port)
 
-client_port = 4040
+client_port = int(config.chat_port)
 if args.client:
     client_port = int(args.client)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Begin Support Code
+username = "Mikesucks"
 
 # Sets the value of the hostname to it's IP address according to the other nodes in the network
 def set(myIP, server):
+    global username
     if os.path.isfile("identity.txt"):
         with open("identity.txt", "r") as f:
             for line in f:
@@ -94,6 +94,7 @@ def set(myIP, server):
                 if len(id) == 2:
                     log.msg("Adding identity to table with username " + str(id[1]) + " and key " + str(id[0]))
                     server.set(str(id[0]) + str(id[1]), myIP)
+                    username = str(id[1])
                 else:
                     log.err("Error adding identity file.")
                     reactor.stop()
@@ -132,16 +133,14 @@ from twisted.internet import protocol, reactor, stdio
 from twisted.protocols import basic
 import unicodedata
 
-connectPort = client_port
 
 class EchoServerProtocol(basic.LineReceiver):
 
     def connectionMade(self):
         global clientFactory
-        if clientFactory is NONE:
-            clientFactory = ClientFactory()
-        peerInfo = self.transport.getPeer()
-        reactor.connectTCP(peerInfo[1], peerInfo[2], clientFactory)
+        #peerInfo = self.transport.getPeer() #Untested - may not work
+        #log.msg("Server Recieved: Connection from " + str(peerInfo[1]) +" on port "+ str(peerInfo[2]))
+        #reactor.connectTCP(peerInfo[1], peerInfo[2], clientFactory)
 
     def lineReceived(self, line):
         log.msg("Server Recieved: " + line)
@@ -152,7 +151,8 @@ class EchoServerProtocol(basic.LineReceiver):
 
 class EchoClientProtocol(basic.LineReceiver):
     def connectionMade(self):
-        self.setName("Username")
+        global username
+        self.setName(username)
 
         log.msg("Client Send: " + self.name + " Connected")
         self.sendLine(self.name + " Connected\n")
@@ -194,8 +194,10 @@ class ClientFactory(Factory):
 
     def clientConnectionLost(self, connector, reason):
         log.msg("ClientFactory: Connection Lost")
+        chatWindowPrintText("Connection Lost")
     def clientConnectionFailed(self, connector, reason):
         log.msg("ClientFactory: Connection Failed")
+        chatWindowPrintText("Unable to connect")
 
     def __init__(self):
         self.users = {}
@@ -204,7 +206,6 @@ class ClientFactory(Factory):
 # list boxes in GUI for displaying and selecting contact info
 ConnectionsList = []
 
-selectedIP = NONE
 chatWindow = NONE
 textEntry = NONE
 
@@ -232,7 +233,7 @@ def sendChatMessage(event):
         textEntry.delete('0.0', END)
 
         message = message.lstrip()
-        chatWindowPrintText(message)
+        chatWindowPrintText("Me: "+message)
 
         #Send the message to other users
         if clientFactory is not NONE:
@@ -240,21 +241,17 @@ def sendChatMessage(event):
                 #TODO avoid sending the message to ourselves
                 clientFactory.users[name].sendMessage(message)
 
-
-# update the global selected IP address
-def updateSelected():
-
-    global selectedIP
-    #TODO make this more robust/usefull etc
-    selectedIP = ConnectionsList[1].get(ACTIVE)
-
-
 # Takes the result from the DHT and parses out the IP and port
 # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
 def get_contact_location(result, contact):
     if result is not None:
-        contact['ip'] = result[0][0]
-        contact['port'] = result[0][1] #TODO causing exception?
+        #contact['ip'] = result[0][0]
+        #contact['port'] = result[0][1] #TODO causing exception?
+
+        #TODO fix this! - temp fix to avoid exceptionns while it is incorrect
+        contact['ip'] = result[0][0][0]
+        contact['port'] = result[0][0][1]
+        contact['clientport'] = client_port #TODO make this their client port not ours
 
 # Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
 def refreshAvailIP():
@@ -269,32 +266,44 @@ def refreshAvailIP():
     ConnectionsList[1].delete(0, END)
 
     for contact in Contacts:
+        contactName = contact['username']
+        contactIP = contact['ip']
+        if contactIP is "" or contactIP is None:
+            contactIP = "Offline"
+
         # add the new values to the GUI
-        ConnectionsList[0].insert(END, contact['username'])
-        ConnectionsList[1].insert(END, contact['ip'])
+        ConnectionsList[0].insert(END, contactName)
+        ConnectionsList[1].insert(END, contactIP)
+
+# update the global selected IP address
+def updateSelectedContact():
+
+    selectedContact = None
+    selectedIP = ConnectionsList[1].get(ACTIVE)
+    selectedContact = Contacts[0] #TODO find the correct contact here
+    return selectedContact
 
 
 # connect to the selected IP address
 def connectToIP():
 
-    global selectedIP
-    global clientService, clientFactory
-    updateSelected()
+    global clientFactory
+    # get the contact from the gui selection
+    selectedContact = updateSelectedContact()
 
-    #TODO failure cases for ip addresses go here
-    if(selectedIP == NONE or selectedIP == ""):
-        chatWindowPrintText("Unable to connect to IP\n")
+    if(selectedContact == None):
+        chatWindowPrintText("No Contact Selected\n")
         return False
 
-    chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
+    selectedIP = selectedContact['ip']
+    selectedPort = selectedContact['clientport']
 
-    #TODO make unbroken (might be doing multiple connects to same IP etc.)
-    if clientFactory is NONE:
-        clientFactory = ClientFactory()
-    #TODO don't use localhost(change when we have populated IP list)
-    #TODO don't use fixed port
-    reactor.connectTCP('localhost', 9000, clientFactory)
+    if selectedIP is NONE or selectedPort is None:
+        return False
 
+    chatWindowPrintText("Attempting to connect to "+selectedIP+"\n")
+    log.msg("Client attempting to connect to "+selectedIP+" on port "+str(selectedPort))
+    reactor.connectTCP(selectedIP, selectedPort, clientFactory)
     return True
 
 def closeProgram():
@@ -361,6 +370,9 @@ try:
     reactor.listenTCP(client_port, factory)
 except: #won't break absolutly everything if you run two instances on one machine
     log.err("Error starting Chat Server: port in use")
+
+# set up the client gui connection service
+clientFactory = ClientFactory()
 
 #set up the gui root and connect it to the reactor
 if not args.nogui:
