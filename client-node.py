@@ -191,8 +191,10 @@ class ClientFactory(Factory):
 
     def clientConnectionLost(self, connector, reason):
         log.msg("ClientFactory: Connection Lost")
+        chatWindowPrintText("Connection Lost")
     def clientConnectionFailed(self, connector, reason):
         log.msg("ClientFactory: Connection Failed")
+        chatWindowPrintText("Unable to connect")
 
     def __init__(self):
         self.users = {}
@@ -201,8 +203,6 @@ class ClientFactory(Factory):
 # list boxes in GUI for displaying and selecting contact info
 ConnectionsList = []
 
-selectedIP = NONE
-selectedContact = NONE
 chatWindow = NONE
 textEntry = NONE
 
@@ -238,23 +238,16 @@ def sendChatMessage(event):
                 #TODO avoid sending the message to ourselves
                 clientFactory.users[name].sendMessage(message)
 
-
-# update the global selected IP address
-def updateSelected():
-
-    global selectedIP
-    global selectedContact
-    #TODO make this more robust/usefull etc
-    selectedIP = ConnectionsList[1].get(ACTIVE)
-    selectedContact = Contacts[0] #TODO find the correct contact here
-
-
 # Takes the result from the DHT and parses out the IP and port
 # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
 def get_contact_location(result, contact):
     if result is not None:
-        contact['ip'] = result[0][0]
-        contact['port'] = result[0][1] #TODO causing exception?
+        #contact['ip'] = result[0][0]
+        #contact['port'] = result[0][1] #TODO causing exception?
+
+        #TODO fix this! - temp fix to avoid exceptionns while it is incorrect
+        contact['ip'] = result[0][0][0]
+        contact['port'] = result[0][0][1]
 
 # Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
 def refreshAvailIP():
@@ -273,22 +266,35 @@ def refreshAvailIP():
         ConnectionsList[0].insert(END, contact['username'])
         ConnectionsList[1].insert(END, contact['ip'])
 
+# update the global selected IP address
+def updateSelectedContact():
+
+    selectedContact = NONE
+    selectedIP = ConnectionsList[1].get(ACTIVE)
+    selectedContact = Contacts[0] #TODO find the correct contact here
+    return selectedContact
+
 
 # connect to the selected IP address
 def connectToIP():
 
-    global selectedIP, selectedContact
-    global clientService, clientFactory
-    updateSelected()
+    global clientFactory
+    # get the contact from the gui selection
+    selectedContact = updateSelectedContact()
 
-    #TODO failure cases for ip addresses go here
-    if(selectedIP == NONE or selectedIP == ""):
-        chatWindowPrintText("Unable to connect to IP\n")
+    if(selectedContact == NONE):
+        chatWindowPrintText("No Contact Selected\n")
         return False
 
-    chatWindowPrintText("Attempting to connect to "+ selectedIP+"\n")
-    reactor.connectTCP(selectedContact['ip'], selectedContact['port'], clientFactory)
+    selectedIP = selectedContact['ip']
+    selectedPort = selectedContact['port']
 
+    if(selectedIP == NONE or selectedPort == NONE):
+        return False
+
+    chatWindowPrintText("Attempting to connect to "+selectedIP+"\n")
+    log.msg("Client attempting to connect to "+selectedIP+" on port "+str(selectedPort))
+    reactor.connectTCP(selectedIP, selectedPort, clientFactory)
     return True
 
 def closeProgram():
