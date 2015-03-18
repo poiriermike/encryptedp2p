@@ -18,7 +18,7 @@ backup = "client_state.bak"
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
 known_nodes = []
 
-# Contacts takes the form of {"username": "sample", "key": "key_value", "ip": "1.1.1.1", "port": "3000", "clientport": "3001", "online": False}
+# Contacts takes the form of {"username": "sample", "key": "key_value", "ip": "1.1.1.1", "port": "3000", "online": False}
 Contacts = []
 
 # Import settings from the configuration file
@@ -43,7 +43,7 @@ if os.path.isfile(config.contacts_file):
         for line in f:
             info = line.split()
             if len(info) != 0:
-                Contacts.append({"username": info[1], "key": info[0], "ip": None, "port": None, "clientport": None, "online": False})
+                Contacts.append({"username": info[1], "key": info[0], "ip": None, "port": None, "online": False})
 else:
     with open(config.contacts_file, "w"):
         log.msg("No contacts found. Adding contact file.")
@@ -93,6 +93,8 @@ def set(myIP, server):
                 id = line.split()
                 if len(id) == 2:
                     log.msg("Adding identity to table with username " + str(id[1]) + " and key " + str(id[0]))
+                    myIP[0] = list(myIP[0])
+                    myIP[0][1] = client_port
                     server.set(str(id[0]) + str(id[1]), myIP)
                     username = str(id[1])
                 else:
@@ -251,7 +253,6 @@ def get_contact_location(result, contact):
         #TODO fix this! - temp fix to avoid exceptionns while it is incorrect
         contact['ip'] = result[0][0][0]
         contact['port'] = result[0][0][1]
-        contact['clientport'] = client_port #TODO make this their client port not ours
 
 # Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
 def refreshAvailIP():
@@ -296,7 +297,7 @@ def connectToIP():
         return False
 
     selectedIP = selectedContact['ip']
-    selectedPort = selectedContact['clientport']
+    selectedPort = selectedContact['port']
 
     if selectedIP is NONE or selectedPort is None:
         return False
