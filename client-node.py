@@ -82,9 +82,11 @@ if args.client:
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Begin Support Code
+username = "Mikesucks"
 
 # Sets the value of the hostname to it's IP address according to the other nodes in the network
 def set(myIP, server):
+    global username
     if os.path.isfile("identity.txt"):
         with open("identity.txt", "r") as f:
             for line in f:
@@ -92,6 +94,7 @@ def set(myIP, server):
                 if len(id) == 2:
                     log.msg("Adding identity to table with username " + str(id[1]) + " and key " + str(id[0]))
                     server.set(str(id[0]) + str(id[1]), myIP)
+                    username = str(id[1])
                 else:
                     log.err("Error adding identity file.")
                     reactor.stop()
@@ -135,8 +138,8 @@ class EchoServerProtocol(basic.LineReceiver):
 
     def connectionMade(self):
         global clientFactory
-        peerInfo = self.transport.getPeer() #Untested - may not work
-        log.msg("Server Recieved: Connection from " + str(peerInfo[1]) +" on port "+ str(peerInfo[2]))
+        #peerInfo = self.transport.getPeer() #Untested - may not work
+        #log.msg("Server Recieved: Connection from " + str(peerInfo[1]) +" on port "+ str(peerInfo[2]))
         #reactor.connectTCP(peerInfo[1], peerInfo[2], clientFactory)
 
     def lineReceived(self, line):
@@ -148,7 +151,8 @@ class EchoServerProtocol(basic.LineReceiver):
 
 class EchoClientProtocol(basic.LineReceiver):
     def connectionMade(self):
-        self.setName("Username")
+        global username
+        self.setName(username)
 
         log.msg("Client Send: " + self.name + " Connected")
         self.sendLine(self.name + " Connected\n")
@@ -229,7 +233,7 @@ def sendChatMessage(event):
         textEntry.delete('0.0', END)
 
         message = message.lstrip()
-        chatWindowPrintText(message)
+        chatWindowPrintText("Me: "+message)
 
         #Send the message to other users
         if clientFactory is not NONE:
@@ -247,7 +251,7 @@ def get_contact_location(result, contact):
         #TODO fix this! - temp fix to avoid exceptionns while it is incorrect
         contact['ip'] = result[0][0][0]
         contact['port'] = result[0][0][1]
-        contact['clientport'] = client_port
+        contact['clientport'] = client_port #TODO make this their client port not ours
 
 # Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
 def refreshAvailIP():
@@ -262,14 +266,19 @@ def refreshAvailIP():
     ConnectionsList[1].delete(0, END)
 
     for contact in Contacts:
+        contactName = contact['username']
+        contactIP = contact['ip']
+        if contactIP is "" or contactIP is None:
+            contactIP = "Offline"
+
         # add the new values to the GUI
-        ConnectionsList[0].insert(END, contact['username'])
-        ConnectionsList[1].insert(END, contact['ip'])
+        ConnectionsList[0].insert(END, contactName)
+        ConnectionsList[1].insert(END, contactIP)
 
 # update the global selected IP address
 def updateSelectedContact():
 
-    selectedContact = NONE
+    selectedContact = None
     selectedIP = ConnectionsList[1].get(ACTIVE)
     selectedContact = Contacts[0] #TODO find the correct contact here
     return selectedContact
@@ -282,14 +291,14 @@ def connectToIP():
     # get the contact from the gui selection
     selectedContact = updateSelectedContact()
 
-    if(selectedContact == NONE):
+    if(selectedContact == None):
         chatWindowPrintText("No Contact Selected\n")
         return False
 
     selectedIP = selectedContact['ip']
     selectedPort = selectedContact['clientport']
 
-    if(selectedIP == NONE or selectedPort == NONE):
+    if selectedIP is NONE or selectedPort is None:
         return False
 
     chatWindowPrintText("Attempting to connect to "+selectedIP+"\n")
