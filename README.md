@@ -79,13 +79,13 @@ python client-node.py
 There are a number of options you can use to run the client node. Those annotated with a * will override the value set in your config.txt 
 file:
 
-- -p <the port you are running your kademlia server on>*
-- -I <A bootstrappable IP. Needs to be paried with a -P>*
-- -P <A bootstarppable port for the IP above.>*
-- -l <A log file to save to (defaults to stdout)>*
-- -N <An option to run the client without a GUI (currently not functional WITHOUT a GUI)>
-- -c <Port to run the chat client on.>*
-- -r <Refresh your contacts list every 10 seconds (otherwise has to be done manually)>
+- -p \<the port you are running your kademlia server on\>*
+- -I \<A bootstrappable IP. Needs to be paried with a -P\>*
+- -P \<A bootstarppable port for the IP above.\>*
+- -l \<A log file to save to (defaults to stdout)\>*
+- -N \<An option to run the client without a GUI (currently not functional WITHOUT a GUI)\>
+- -c \<Port to run the chat client on.\>*
+- -r \<Refresh your contacts list every 10 seconds (otherwise has to be done manually)\>
 
 Currently the chat part of the system does not support NAT traversal. We are currently looking at possible solutions.
 
