@@ -16,11 +16,9 @@ except ImportError: #python 3
 backup = "client_state.bak"
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
-# implement it how we were discussing last week.
 known_nodes = []
 
-# list boxes containing contact info
-# Contacts takes the form of {"username": "sample", "key": "key_value", "ip": "1.1.1.1", "port": "3000", "online": False}
+# Contacts takes the form of {"username": "sample", "key": "key_value", "ip": "1.1.1.1", "port": "3000", "clientport": "3001", "online": False}
 Contacts = []
 
 # Import settings from the configuration file
@@ -45,7 +43,7 @@ if os.path.isfile(config.contacts_file):
         for line in f:
             info = line.split()
             if len(info) != 0:
-                Contacts.append({"username": info[1], "key": info[0], "ip": None, "port": None, "online": False})
+                Contacts.append({"username": info[1], "key": info[0], "ip": None, "port": None, "clientport": None, "online": False})
 else:
     with open(config.contacts_file, "w"):
         log.msg("No contacts found. Adding contact file.")
@@ -74,11 +72,11 @@ if args.log:
 else:
     log.startLogging(sys.stdout)
 
-kad_port = config.kademlia_port
+kad_port = int(config.kademlia_port)
 if args.port:
-    kad_port = args.port
+    kad_port = int(args.port)
 
-client_port = 4040
+client_port = int(config.chat_port)
 if args.client:
     client_port = int(args.client)
 
@@ -248,6 +246,7 @@ def get_contact_location(result, contact):
         #TODO fix this! - temp fix to avoid exceptionns while it is incorrect
         contact['ip'] = result[0][0][0]
         contact['port'] = result[0][0][1]
+        contact['clientport'] = client_port
 
 # Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
 def refreshAvailIP():
@@ -287,7 +286,7 @@ def connectToIP():
         return False
 
     selectedIP = selectedContact['ip']
-    selectedPort = selectedContact['port']
+    selectedPort = selectedContact['clientport']
 
     if(selectedIP == NONE or selectedPort == NONE):
         return False
