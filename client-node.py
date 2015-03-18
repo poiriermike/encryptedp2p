@@ -136,7 +136,8 @@ class EchoServerProtocol(basic.LineReceiver):
     def connectionMade(self):
         global clientFactory
         peerInfo = self.transport.getPeer() #Untested - may not work
-        reactor.connectTCP(peerInfo[1], peerInfo[2], clientFactory)
+        log.msg("Server Recieved: Connection from " + str(peerInfo[1]) +" on port "+ str(peerInfo[2]))
+        #reactor.connectTCP(peerInfo[1], peerInfo[2], clientFactory)
 
     def lineReceived(self, line):
         log.msg("Server Recieved: " + line)
