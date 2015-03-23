@@ -235,13 +235,14 @@ def sendChatMessage(event):
         textEntry.delete('0.0', END)
 
         message = message.lstrip()
-        chatWindowPrintText("Me: "+message)
+        if message != "":
+            chatWindowPrintText("Me: "+message)
 
-        #Send the message to other users
-        if clientFactory is not NONE:
-            for name in clientFactory.users:
-                #TODO avoid sending the message to ourselves
-                clientFactory.users[name].sendMessage(message)
+            #Send the message to other users
+            if clientFactory is not NONE:
+                for name in clientFactory.users:
+                    #TODO avoid sending the message to ourselves
+                    clientFactory.users[name].sendMessage(message)
 
 # Takes the result from the DHT and parses out the IP and port
 # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
@@ -279,10 +280,12 @@ def refreshAvailIP():
 # update the global selected IP address
 def updateSelectedContact():
 
-    selectedContact = None
     selectedIP = ConnectionsList[1].get(ACTIVE)
-    selectedContact = Contacts[0] #TODO find the correct contact here
-    return selectedContact
+    #selectedContact = Contacts[0] #TODO find the correct contact here
+    for contact in Contacts:
+        if contact['ip'] == selectedIP:
+            return contact
+    return None
 
 
 # connect to the selected IP address
@@ -293,7 +296,7 @@ def connectToIP():
     selectedContact = updateSelectedContact()
 
     if(selectedContact == None):
-        chatWindowPrintText("No Contact Selected\n")
+        chatWindowPrintText("Contact is Offline or Unavailable\n")
         return False
 
     selectedIP = selectedContact['ip']
