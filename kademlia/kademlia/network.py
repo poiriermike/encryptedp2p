@@ -141,6 +141,12 @@ class Server(object):
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find()
 
+    def sendMessage(self, message, addr, port):
+        self.protocol.callSend(message, addr, port)
+
+    def pollReceivedMessages(self):
+        return self.protocol.getMessages()
+
     def _setWithTimestamp(self, existingValue, key, value, requestedTimeStamp):
         """
         Sends the command to store the key/value pair on all required nodes.

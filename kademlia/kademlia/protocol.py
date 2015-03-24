@@ -17,6 +17,7 @@ class KademliaProtocol(RPCProtocol):
         self.storage = storage
         self.sourceNode = sourceNode
         self.log = Logger(system=self)
+        self.messages = []
 
     def getRefreshIDs(self):
         """
@@ -26,6 +27,15 @@ class KademliaProtocol(RPCProtocol):
         for bucket in self.router.getLonelyBuckets():
             ids.append(random.randint(*bucket.range))
         return ids
+
+    def getMessages(self):
+        if len(self.messages) == 0:
+            return None
+
+        newList = []
+	while len(self.messages) > 0:
+            newList.append(self.messages.pop(0))
+        return newList
 
     def rpc_stun(self, sender):
         return sender
@@ -47,6 +57,11 @@ class KademliaProtocol(RPCProtocol):
         else:
             self.log.debug("IGNORING a store request from %s, existing timestamp %s is larger than new %s" % (str(sender), str(existingValue[1]), str(value[1])))
             return False
+
+    def rpc_send(self, sender, message):
+        self.log.info("Received message: \"" + message.strip("\n") + "\" from address " + str(sender))
+        self.messages.append(message)
+	return True
 
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
@@ -82,6 +97,11 @@ class KademliaProtocol(RPCProtocol):
         address = (nodeToAsk.ip, nodeToAsk.port)
         d = self.store(address, self.sourceNode.id, key, value)
         return d.addCallback(self.handleCallResponse, nodeToAsk)
+
+    def callSend(self, message, addr, port):
+        address = (addr, port)
+	self.log.info("Sending message: \"" + message.strip("\n") + "\" to address " + str(address))
+	self.send(address, message)
 
     def transferKeyValues(self, node):
         """
