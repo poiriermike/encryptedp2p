@@ -246,14 +246,7 @@ def sendChatMessage(event):
         if message != "":
             chatWindowPrintText("Me: "+message)
 
-<<<<<<< HEAD
-            #Send the message to other users
-            if clientFactory is not NONE:
-                for name in clientFactory.users:
-                    #TODO avoid sending the message to ourselves
-                    clientFactory.users[name].sendMessage(message)
-=======
-	log.msg("Client Send: "+message)
+        log.msg("Client Send: " + message)
         server.sendMessage(username + ": " + message, selectedIP, selectedPort)
 
         #Send the message to other users
@@ -270,8 +263,7 @@ def pollForMessage():
 
     for message in messages:
         log.msg("Server Recieved: " + message)
-    	chatWindowPrintText(message)  
->>>>>>> master
+        chatWindowPrintText(message)
 
 # Takes the result from the DHT and parses out the IP and port
 # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
@@ -318,28 +310,6 @@ def updateSelectedContact():
 
 
 # connect to the selected IP address
-<<<<<<< HEAD
-def connectToIP():
-
-    global clientFactory
-    # get the contact from the gui selection
-    selectedContact = updateSelectedContact()
-
-    if(selectedContact == None):
-        chatWindowPrintText("Contact is Offline or Unavailable\n")
-        return False
-
-    selectedIP = selectedContact['ip']
-    selectedPort = selectedContact['port']
-
-    if selectedIP is NONE or selectedPort is None:
-        return False
-
-    chatWindowPrintText("Attempting to connect to "+selectedIP+"\n")
-    log.msg("Client attempting to connect to "+selectedIP+" on port "+str(selectedPort))
-    reactor.connectTCP(selectedIP, selectedPort, clientFactory)
-    return True
-=======
 #def connectToIP():
 #
 #    global clientFactory
@@ -360,7 +330,6 @@ def connectToIP():
 #    log.msg("Client attempting to connect to "+selectedIP+" on port "+str(selectedPort))
 #    reactor.connectTCP(selectedIP, selectedPort, clientFactory)
 #    return True
->>>>>>> master
 
 def closeProgram():
     reactor.stop()
