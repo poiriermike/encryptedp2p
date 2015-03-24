@@ -243,10 +243,10 @@ def sendChatMessage(event):
         textEntry.delete('0.0', END)
 
         message = message.lstrip()
-        chatWindowPrintText("Me: "+message)
-
-	log.msg("Client Send: "+message)
-        server.sendMessage(username + ": " + message, selectedIP, selectedPort)
+        if message != "":
+            chatWindowPrintText("Me: "+message)
+            log.msg("Client Send: " + message)
+            server.sendMessage(username + ": " + message, selectedIP, selectedPort)
 
         #Send the message to other users
         #if clientFactory is not NONE:
@@ -261,8 +261,9 @@ def pollForMessage():
         return
 
     for message in messages:
-        log.msg("Server Recieved: " + message)
-    	chatWindowPrintText(message)  
+        if message != "":
+            log.msg("Server Recieved: " + message)
+            chatWindowPrintText(message)
 
 # Takes the result from the DHT and parses out the IP and port
 # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
@@ -300,10 +301,12 @@ def refreshAvailIP():
 # update the global selected IP address
 def updateSelectedContact():
 
-    selectedContact = None
     selectedIP = ConnectionsList[1].get(ACTIVE)
-    selectedContact = Contacts[0] #TODO find the correct contact here
-    return selectedContact
+    #selectedContact = Contacts[0] #TODO find the correct contact here
+    for contact in Contacts:
+        if contact['ip'] == selectedIP:
+            return contact
+    return None
 
 
 # connect to the selected IP address
