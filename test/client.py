@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
 # implement it how we were discussing last week.
-known_nodes = [(("10.0.0.238", 5050))]
+known_nodes = [(("127.0.0.1", 8000))]
 
 if args.file:
     if os.path.isfile(args.file):
@@ -40,21 +40,30 @@ else:
     log.startLogging(sys.stdout)
 
 def print_result(result):
-    print("Value found=" + str(result))
+    print("------------------Value found=" + str(result))
     # Stops the server code from executing once it's done
     print ("Neighbours: " + str(server.bootstrappableNeighbors()))
 
 def get(result, server):
-    print("Grabbing the result from the server")
+    print("------------------Grabbing the result from the server")
     # Gets the specified key/value pair from the server, then it will call the print_result function with the retrieved
     # value
-    server.get(socket.gethostname()).addCallback(print_result)
+    server.get("val-location").addCallback(print_result)
+
+def get_encry(result, sever):
+    print("------------------Checking the encryption key is available")
+    server.findencryptionkey("val-location").addCallback(set, server)
 
 # Simple function to call upon a server bootstrap. It will add a key/value pair to the hash table
 def set(stuff, morestuff):
-    print("I'm doing things!")
+    print("------------------I'm doing things!")
     # Sets a key/value pair in the DHT, then calls the get function, with the server.
-    server.set(socket.gethostname(), socket.gethostname()).addCallback(get, server)
+
+    server.set("val-location", "Hello World", "testpassword").addCallback(get, server)
+
+def setEncryption(stuff, morestuff):
+    print("------------------Setting password")
+    server.set_encryption_key("val-location", "testpassword").addCallback(get_encry, server)
 
 
 # Starts setting up the local server to run
@@ -71,7 +80,7 @@ if os.path.exists(backup):
     server.saveStateRegularly(backup, 300)
 
 # The addCallback can be added to many of the server functions, and can be used to chain call functions
-server.bootstrap(known_nodes).addCallback(set, server)
+server.bootstrap(known_nodes).addCallback(setEncryption, server)
 
 # starts the execution of the server code
 reactor.run()

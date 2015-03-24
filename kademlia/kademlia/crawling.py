@@ -62,11 +62,13 @@ class SpiderCrawl(object):
 
 
 class ValueSpiderCrawl(SpiderCrawl):
-    def __init__(self, protocol, node, peers, ksize, alpha):
+    def __init__(self, protocol, node, peers, ksize, alpha, encryption_key, server):
         SpiderCrawl.__init__(self, protocol, node, peers, ksize, alpha)
         # keep track of the single nearest node without value - per
         # section 2.3 so we can set the key there if found
         self.nearestWithoutValue = NodeHeap(self.node, 1)
+        self.encryption_key = encryption_key
+        self.server = server
 
     def find(self):
         """
@@ -106,19 +108,38 @@ class ValueSpiderCrawl(SpiderCrawl):
         make sure we tell the nearest node that *didn't* have
         the value to store it.
         """
-        valueCounts = Counter([x[1] for x in values])
+
+        self.log.debug("Handling found values")
+
+        filtered_values = []
+        for x in values:
+            self.log.debug("x:" + str(x))
+            self.log.debug(type(x[1]))
+            if self.encryption_key is None:
+                temp_encryption_key = x[0]
+            else:
+                temp_encryption_key = self.encryption_key
+            if self.server.evaluate_timestamp(x[1], temp_encryption_key) is not None:
+                filtered_values.append((x, temp_encryption_key))
+
+        valueCounts = Counter([x[0] for x in values])
         if len(valueCounts) != 1:
             args = (self.node.long_id, str(values))
             self.log.warning("Got multiple values for key %i: %s" % args)
-        value = sorted(values, key=lambda y: y[1])[-1:]
-        if value != None:
-            value = sorted(values, key=lambda y: y[1])[-1]
+
+        sorted_values = sorted(filtered_values, key=lambda y: self.server.evaluate_timestamp(y[0][1], y[1]))[-1:]
+        value = None
+        if sorted_values is not None:
+            value = sorted_values[-1][0]
         #value = valueCounts.most_common(1)[0][0]
 
+        self.log.debug("Backing up values to nearest neighbour")
+
         peerToSaveTo = self.nearestWithoutValue.popleft()
-        if peerToSaveTo is not None:
-            d = self.protocol.callStore(peerToSaveTo, self.node.id, value)
+        if peerToSaveTo is not None and value is not None:
+            d = self.protocol.callStore(peerToSaveTo, self.node.id, value, self.encryption_key is None)
             return d.addCallback(lambda _: value)
+        self.log.debug("Found %s" % value)
         return value
 
 

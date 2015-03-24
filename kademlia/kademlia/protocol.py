@@ -1,4 +1,5 @@
 import random
+from collections import namedtuple
 
 from twisted.internet import defer
 
@@ -11,9 +12,10 @@ from kademlia.utils import digest
 
 
 class KademliaProtocol(RPCProtocol):
-    def __init__(self, sourceNode, storage, ksize):
+    def __init__(self, sourceNode, storage, ksize, server):
         RPCProtocol.__init__(self)
         self.router = RoutingTable(self, ksize, sourceNode)
+        self.server = server
         self.storage = storage
         self.sourceNode = sourceNode
         self.log = Logger(system=self)
@@ -35,18 +37,42 @@ class KademliaProtocol(RPCProtocol):
         self.router.addContact(source)
         return self.sourceNode.id
 
-    def rpc_store(self, sender, nodeid, key, value):
-        source = Node(nodeid, sender[0], sender[1])
-        self.router.addContact(source)
-        #Check if the timestamp of any existing value is larger than the new one.
+    def _finish_store(self, expected_encryption_key, sender, key, value):
+        self.log.debug ("Finishing store of value (%s)" % value)
         existingValue = self.storage.get(key, None)
-        if (not existingValue) or (existingValue[1] < value[1]):
+        new_timestamp = self.server.evaluate_timestamp(value[1], expected_encryption_key)
+        self.log.debug("Decoded timestamp is %s" % str(new_timestamp))
+        current_timestamp = None
+        if existingValue:
+            current_timestamp = self.server.evaluate_timestamp(existingValue[1], expected_encryption_key)
+
+        if new_timestamp is None:
+            self.log.debug("IGNORING a store request from %s, could not decode a timestamp" % (str(sender)))
+            return False
+
+        if (not current_timestamp) or (current_timestamp < new_timestamp):
             self.log.debug("got a store request from %s, storing value" % str(sender))
             self.storage[key] = value
             return True
         else:
             self.log.debug("IGNORING a store request from %s, existing timestamp %s is larger than new %s" % (str(sender), str(existingValue[1]), str(value[1])))
             return False
+
+    def rpc_store(self, sender, nodeid, key, value, is_self_signed=False):
+        source = Node(nodeid, sender[0], sender[1])
+        self.router.addContact(source)
+
+        # Find the encryption key to use, if one exists
+        if not is_self_signed:
+            self.log.debug("Storing encrypted value (%s=%s), looking up encryption key" % (key, value))
+            # self.log.debug("############Hello")
+            # self.server.get(value[2], True)
+            # self.log.debug("############End Test")
+            d = defer.maybeDeferred(self.server.get, value[2], True)
+            return d.addCallback(self._finish_store, sender, key, value)
+        else:
+            self.log.debug("Storing self signed value (key=%i, value=%s)" % (long(key.encode('hex'), 16), str(value)))
+            return self._finish_store(value[0], sender, key, value)
 
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
@@ -56,9 +82,11 @@ class KademliaProtocol(RPCProtocol):
         return map(tuple, self.router.findNeighbors(node, exclude=source))
 
     def rpc_find_value(self, sender, nodeid, key):
+        self.log.debug("_____________________ Finding value at %i!" % long(key.encode('hex'), 16))
         source = Node(nodeid, sender[0], sender[1])
         self.router.addContact(source)
         value = self.storage.get(key, None)
+        self.log.debug("_____________________ Found in local storage: %s" % str(value))
         if value is None:
             return self.rpc_find_node(sender, nodeid, key)
         return { 'value': value }
@@ -78,9 +106,10 @@ class KademliaProtocol(RPCProtocol):
         d = self.ping(address, self.sourceNode.id)
         return d.addCallback(self.handleCallResponse, nodeToAsk)
 
-    def callStore(self, nodeToAsk, key, value):
+    def callStore(self, nodeToAsk, key, value, isSelfSigned):
+        self.log.debug("callStore: key:%s, value:%s, selfSigned?:%s" % (key, value, str(isSelfSigned)))
         address = (nodeToAsk.ip, nodeToAsk.port)
-        d = self.store(address, self.sourceNode.id, key, value)
+        d = self.store(address, self.sourceNode.id, key, value, isSelfSigned)
         return d.addCallback(self.handleCallResponse, nodeToAsk)
 
     def transferKeyValues(self, node):
@@ -114,6 +143,7 @@ class KademliaProtocol(RPCProtocol):
         """
         if result[0]:
             self.log.info("got response from %s, adding to router" % node)
+            self.log.info("Response: (%s)" % str(result))
             self.router.addContact(node)
             if self.router.isNewNode(node):
                 self.transferKeyValues(node)
