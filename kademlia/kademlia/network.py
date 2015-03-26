@@ -19,7 +19,6 @@ from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
 
-
 class Server(object):
     """
     High level view of a node instance.  This is the object that should be created
@@ -45,6 +44,7 @@ class Server(object):
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
 
     def listen(self, port):
+        self.port = port
         """
         Start listening on the given port.
 
@@ -96,6 +96,8 @@ class Server(object):
             addrs: A `list` of (ip, port) `tuple` pairs.  Note that only IP addresses
                    are acceptable - hostnames will cause an error.
         """
+        addrs.append(("127.0.0.1", self.port))
+
         # if the transport hasn't been initialized yet, wait a second
         if self.protocol.transport is None:
             return task.deferLater(reactor, 1, self.bootstrap, addrs)
@@ -143,7 +145,7 @@ class Server(object):
 
     def _finish_get(self, encryption_key, node, nearest, key, self_signed):
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha, encryption_key, self)
-        return spider.find()
+        return spider.find(self.storage.get(key, None))
 
     def get(self, key, self_signed=False):
         """
@@ -159,7 +161,7 @@ class Server(object):
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
             self.log.warning("There are no known neighbors to get key %s" % key)
-            return defer.succeed(None)
+            return defer.maybeDeferred(self.storage.get, key, None)
         encryption_key = None
         if not self_signed:
             self.log.debug("Value is not self signed, need to find the key")
@@ -169,6 +171,9 @@ class Server(object):
         return self._finish_get(encryption_key, node, nearest, key, self_signed)
 
     def evaluate_timestamp(self, encrypted_timestamp, encryption_key):
+        self.log.debug(str(type(encryption_key)) + " is the key")
+        if type(encryption_key) is not str:
+            encryption_key = encryption_key[0]
         self.log.debug("Eval Timestamp! (key:%s) " % encryption_key)
         self.log.debug(type(encrypted_timestamp))
         if not encryption_key or not encrypted_timestamp:
@@ -188,6 +193,10 @@ class Server(object):
         else:
             return None
 
+    # def filterKeys(self, key=None):
+    #     self.log.debug(str(type(key)) + str(key))
+    #     self.log.debug(str(key[0]) if key else None)
+    #     return defer.maybeDeferred(key[0] if key else None)
 
     def _setWithTimestamp(self, existingValue, key, value, requestedTimeStamp, encryptionkey, encryption_key_location):
         """
@@ -225,8 +234,8 @@ class Server(object):
 
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
-            ds = [self.protocol.callStore(node, dkey, (value, timestamp, encryption_key_location),
-                                          key == encryption_key_location) for node in nodes]
+            ds = [self.protocol.callStore(n, dkey, (value, timestamp, encryption_key_location),
+                                          key == encryption_key_location) for n in nodes]
             return defer.DeferredList(ds).addCallback(self._anyRespondSuccess)
 
         node = Node(dkey)
@@ -275,9 +284,12 @@ class Server(object):
 
         if timestamp is None:
             self.log.debug("Checking for existing timestamp of '%s' on network before setting new value at '%s'" % (value, key))
+            # return self.get(key, explicit_encryption_key is None).addCallback(self.filterKeys()).\
+            #     addCallback(self._setWithTimestamp, key=key, value=value, requestedTimeStamp=None, encryptionkey=encryption_key,
+            #                 encryption_key_location=encryption_key_location)
             return self.get(key, explicit_encryption_key is None).\
-                addCallback(self._setWithTimestamp, key=key, value=value, requestedTimeStamp=None, encryptionkey=encryption_key,
-                            encryption_key_location=encryption_key_location)
+                addCallback(self._setWithTimestamp, key=key, value=value, requestedTimeStamp=None, encryptionkey=encryption_key, encryption_key_location=encryption_key_location)
+
         else:
             self.log.debug("Preparing to set '%s' = '%s' with explicit timestamp '%s'" % (str(key),
                                                                                           str(value), str(timestamp)))

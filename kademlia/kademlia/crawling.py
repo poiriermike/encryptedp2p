@@ -31,7 +31,7 @@ class SpiderCrawl(object):
         self.nearest.push(peers)
 
 
-    def _find(self, rpcmethod):
+    def _find(self, rpcmethod, localValue=None):
         """
         Get either a value or list of nodes.
 
@@ -58,7 +58,10 @@ class SpiderCrawl(object):
         for peer in self.nearest.getUncontacted()[:count]:
             ds[peer.id] = rpcmethod(peer, self.node)
             self.nearest.markContacted(peer)
-        return deferredDict(ds).addCallback(self._nodesFound)
+        if localValue:
+            return deferredDict(ds).addCallback(self._nodesFound, localValue)
+        else:
+            return deferredDict(ds).addCallback(self._nodesFound)
 
 
 class ValueSpiderCrawl(SpiderCrawl):
@@ -70,18 +73,21 @@ class ValueSpiderCrawl(SpiderCrawl):
         self.encryption_key = encryption_key
         self.server = server
 
-    def find(self):
+    def find(self, localValue=None):
         """
         Find either the closest nodes or the value requested.
         """
-        return self._find(self.protocol.callFindValue)
+        return self._find(self.protocol.callFindValue, localValue)
 
-    def _nodesFound(self, responses):
+    def _nodesFound(self, responses, localValue=None):
         """
         Handle the result of an iteration in _find.
         """
         toremove = []
         foundValues = []
+        if localValue:
+            self.log.debug("Local value is %s" % str(localValue))
+            foundValues.append(localValue)
         for peerid, response in responses.items():
             response = RPCFindResponse(response)
             if not response.happened():

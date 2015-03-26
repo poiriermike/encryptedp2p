@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
 # implement it how we were discussing last week.
-known_nodes = [(("127.0.0.1", 8000))]
+known_nodes = [("127.0.0.1", 8000)]#, ("127.0.0.1", 8001)]
 
 if args.file:
     if os.path.isfile(args.file):
@@ -81,6 +81,7 @@ if os.path.exists(backup):
 
 # The addCallback can be added to many of the server functions, and can be used to chain call functions
 server.bootstrap(known_nodes).addCallback(setEncryption, server)
+#setEncryption(None, None)
 
 # starts the execution of the server code
 reactor.run()
