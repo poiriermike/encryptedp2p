@@ -383,8 +383,8 @@ def initializeGUI():
     exitButton = Button(root, text="Exit Program", command=closeProgram)
     exitButton.pack(side=RIGHT)
 
-    connectButton = Button(root, text="Connect", command=None)#connectToIP)
-    connectButton.pack(side=RIGHT)
+    #connectButton = Button(root, text="Connect", command=None)#connectToIP)
+    #connectButton.pack(side=RIGHT)
 
     return root
 
