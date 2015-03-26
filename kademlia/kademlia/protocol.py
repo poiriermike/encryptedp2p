@@ -9,6 +9,25 @@ from kademlia.routing import RoutingTable
 from kademlia.log import Logger
 from kademlia.utils import digest
 
+from simplecrypt import encrypt, decrypt, DecryptionException
+
+def decodeTimestamp(encodedTimestamp, key):
+    if not encodedTimestamp or not key:
+        return None
+    try:
+        return int(decrypt(key, encodedTimestamp))
+    except (DecryptionException, ValueError):
+        return None
+
+def encodeTimestamp(timestamp, key):
+    print(str(timestamp) + str(type(timestamp)) + str(key) + str(type(key)))
+    if not timestamp or not key:
+        return None
+    try:
+        return encrypt(key, str(timestamp))
+    except DecryptionException:
+        return None
+
 
 class KademliaProtocol(RPCProtocol):
     def __init__(self, sourceNode, storage, ksize):
@@ -40,12 +59,15 @@ class KademliaProtocol(RPCProtocol):
         self.router.addContact(source)
         #Check if the timestamp of any existing value is larger than the new one.
         existingValue = self.storage.get(key, None)
-        if (not existingValue) or (existingValue[1] < value[1]):
+        newTimestamp = decodeTimestamp(value[1], value[2])
+        if existingValue:
+            existingTimestamp = decodeTimestamp(existingValue[1], value[2])
+        if (not existingValue) or (existingTimestamp < newTimestamp):
             self.log.debug("got a store request from %s, storing value" % str(sender))
             self.storage[key] = value
             return True
         else:
-            self.log.debug("IGNORING a store request from %s, existing timestamp %s is larger than new %s" % (str(sender), str(existingValue[1]), str(value[1])))
+            self.log.debug("IGNORING a store request from %s, existing timestamp %s is larger than new %s" % (str(sender), str(existingTimestamp), str(newTimestamp)))
             return False
 
     def rpc_find_node(self, sender, nodeid, key):
@@ -79,6 +101,7 @@ class KademliaProtocol(RPCProtocol):
         return d.addCallback(self.handleCallResponse, nodeToAsk)
 
     def callStore(self, nodeToAsk, key, value):
+        self.log.debug("Storing on %s" % str(nodeToAsk))
         address = (nodeToAsk.ip, nodeToAsk.port)
         d = self.store(address, self.sourceNode.id, key, value)
         return d.addCallback(self.handleCallResponse, nodeToAsk)

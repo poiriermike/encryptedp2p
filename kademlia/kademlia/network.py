@@ -3,6 +3,7 @@ Package for interacting on the network at a high level.
 """
 import random
 import pickle
+from reportlab.lib.pdfencrypt import encryptionkey
 
 from twisted.internet.task import LoopingCall
 from twisted.internet import defer, reactor, task
@@ -14,6 +15,8 @@ from kademlia.storage import ForgetfulStorage
 from kademlia.node import Node
 from kademlia.crawling import ValueSpiderCrawl
 from kademlia.crawling import NodeSpiderCrawl
+from protocol import decodeTimestamp
+from protocol import encodeTimestamp
 
 
 class Server(object):
@@ -48,6 +51,7 @@ class Server(object):
 
             reactor.listenUDP(port, server.protocol)
         """
+        self.port = port
         return reactor.listenUDP(port, self.protocol)
 
     def refreshTable(self):
@@ -85,6 +89,8 @@ class Server(object):
         return [ tuple(n)[-2:] for n in neighbors ]
 
     def bootstrap(self, addrs):
+        if self.port:
+            addrs.append(("127.0.0.1", self.port))
         """
         Bootstrap the server by connecting to other known nodes in the network.
 
@@ -141,7 +147,7 @@ class Server(object):
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find()
 
-    def _setWithTimestamp(self, existingValue, key, value, requestedTimeStamp):
+    def _setWithTimestamp(self, existingValue, key, value, requestedTimeStamp, encryptionKey):
         """
         Sends the command to store the key/value pair on all required nodes.
         :param existingValue: The current (value,timestamp) associated with the key, if one exists.
@@ -152,9 +158,13 @@ class Server(object):
         """
         if requestedTimeStamp is None:
             if existingValue:
-                timestamp = existingValue[1] + 1
+                existingTimestamp = decodeTimestamp(value[1], encryptionKey)
+                if not existingTimestamp:
+                    return defer.succeed(False)
+                timestamp = str(existingTimestamp + random.randint(1,100))
+                #timestamp = existingValue[1] + 1
             else:
-                timestamp = 0
+                timestamp = random.randint(0, 1000)
 
             self.log.debug("setting '%s' = '%s' on network with automatic timestamp '%s'" % (key, value, timestamp))
         else:
@@ -165,18 +175,19 @@ class Server(object):
 
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
-            ds = [self.protocol.callStore(node, dkey, (value, timestamp)) for node in nodes]
+            ds = [self.protocol.callStore(n, dkey, (value, encodeTimestamp(str(timestamp), encryptionKey), encryptionKey)) for n in nodes]
             return defer.DeferredList(ds).addCallback(self._anyRespondSuccess)
 
         node = Node(dkey)
         nearest = self.protocol.router.findNeighbors(node)
+        self.log.debug("Found %s neighbours to store values at" % str(nearest))
         if len(nearest) == 0:
             self.log.warning("There are no known neighbors to set key %s" % key)
             return defer.succeed(False)
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find().addCallback(store)
 
-    def set(self, key, value, timestamp=None):
+    def set(self, key, value, encryption_key, timestamp=None):
         """
         Set the given key to the given value in the network. A timestamp will be automatically generated if one is not
         supplied. Values will only be accepted by the hash table if their timestamps are larger than the existing values.
@@ -187,10 +198,10 @@ class Server(object):
         """
         if timestamp is None:
             self.log.debug("Checking for existing timestamp of '%s' on network before setting '%s'" % (value, key))
-            return self.get(key).addCallback(self._setWithTimestamp, key=key, value=value, requestedTimeStamp=None)
+            return self.get(key).addCallback(self._setWithTimestamp, key=key, value=value, requestedTimeStamp=None, encryptionKey=encryption_key)
         else:
             self.log.debug("Preparing to set '%s' = '%s' with explicit timestamp '%s'" % (str(key), str(value), str(timestamp)))
-            return self._setWithTimestamp(existingValue=None, key=key, value=value, requestedTimeStamp=timestamp)
+            return self._setWithTimestamp(existingValue=None, key=key, value=value, requestedTimeStamp=timestamp, encryptionKey=encryption_key)
 
     def _anyRespondSuccess(self, responses):
         """

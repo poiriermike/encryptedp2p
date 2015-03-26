@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
 # implement it how we were discussing last week.
-known_nodes = [(("10.0.0.238", 5050))]
+known_nodes = [("127.0.0.1", 8000)] #,("127.0.0.1", 8001), ("127.0.0.1", 5050)]
 
 if args.file:
     if os.path.isfile(args.file):
@@ -54,7 +54,7 @@ def get(result, server):
 def set(stuff, morestuff):
     print("I'm doing things!")
     # Sets a key/value pair in the DHT, then calls the get function, with the server.
-    server.set(socket.gethostname(), socket.gethostname()).addCallback(get, server)
+    server.set(socket.gethostname(), socket.gethostname(), "test").addCallback(get, server)
 
 
 # Starts setting up the local server to run
