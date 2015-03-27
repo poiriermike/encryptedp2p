@@ -203,6 +203,7 @@ import unicodedata
 
 # list boxes in GUI for displaying and selecting contact info
 ConnectionsList = []
+selectedContact = None;
 
 chatWindow = NONE
 textEntry = NONE
@@ -269,10 +270,6 @@ def pollForMessage():
 # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
 def get_contact_location(result, contact):
     if result is not None:
-        #contact['ip'] = result[0][0]
-        #contact['port'] = result[0][1] #TODO causing exception?
-
-        #TODO fix this! - temp fix to avoid exceptionns while it is incorrect
         contact['ip'] = result[0][0][0]
         contact['port'] = result[0][0][1]
 
@@ -301,12 +298,24 @@ def refreshAvailIP():
 # update the global selected IP address
 def updateSelectedContact():
 
+    selectedName = ConnectionsList[0].get(ACTIVE)
     selectedIP = ConnectionsList[1].get(ACTIVE)
-    #selectedContact = Contacts[0] #TODO find the correct contact here
+
     for contact in Contacts:
+        #if contact['ip'] == selectedIP and contact['username'] == selectedName:
         if contact['ip'] == selectedIP:
             return contact
     return None
+
+#method is called by a ConnectionsList list box when the selection is changed. Updates other accordingly
+def syncListSelections(evt=None, listIndex=0):
+
+    #print("Method called by index " + str(listIndex))
+    otherindex = (listIndex +1) % 2
+
+    toset = ConnectionsList[listIndex].curselection()
+    #returns touple with start/end indexes of selected (ony one selection)
+    ConnectionsList[otherindex].activate(toset[0])
 
 
 # connect to the selected IP address
@@ -352,6 +361,9 @@ def initializeGUI():
 
     ConnectionsList[0].grid(row=0, column=0)
     ConnectionsList[1].grid(row=0, column=1)
+
+    ConnectionsList[0].bind("<<ListboxSelect>>", lambda e:syncListSelections(e, listIndex=0))
+    ConnectionsList[1].bind("<<ListboxSelect>>", lambda e:syncListSelections(e, listIndex=1))
 
     #set up chat window with scroll bar
     chatTextFrame = Frame(root)
