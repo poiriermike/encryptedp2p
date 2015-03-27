@@ -175,12 +175,6 @@ def sendChatMessage(event):
             log.msg("Client Send: " + message)
             server.sendMessage(username + ": " + message, selectedIP, selectedPort)
 
-        #Send the message to other users
-        #if clientFactory is not NONE:
-        #    for name in clientFactory.users:
-                #TODO avoid sending the message to ourselves
-        #        clientFactory.users[name].sendMessage(message) 
-
 def pollForMessage():
     messages = server.pollReceivedMessages()
     
@@ -228,8 +222,7 @@ def updateSelectedContact():
     selectedIP = ConnectionsList[1].get(ACTIVE)
 
     for contact in Contacts:
-        #if contact['ip'] == selectedIP and contact['username'] == selectedName:
-        if contact['ip'] == selectedIP:
+        if contact['ip'] == selectedIP and contact['username'] == selectedName:
             return contact
     return None
 
