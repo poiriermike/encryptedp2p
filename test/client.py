@@ -48,14 +48,15 @@ def get(result, server):
     print("Grabbing the result from the server")
     # Gets the specified key/value pair from the server, then it will call the print_result function with the retrieved
     # value
-    server.get(socket.gethostname()).addCallback(print_result)
+    #server.get(socket.gethostname()).addCallback(print_result)
+    server.get_contact_info(socket.gethostname(), "testkey").addCallback(print_result)
 
 # Simple function to call upon a server bootstrap. It will add a key/value pair to the hash table
 def set(stuff, morestuff):
     print("I'm doing things!")
     # Sets a key/value pair in the DHT, then calls the get function, with the server.
-    server.set(socket.gethostname(), socket.gethostname(), "test").addCallback(get, server)
-
+    # server.set(socket.gethostname(), socket.gethostname(), "test").addCallback(get, server)
+    server.set_contact_info(socket.gethostname(), [("foo", "bar"), ("Hello", "World")], "testkey", "seqkey").addCallback(get, server)
 
 # Starts setting up the local server to run
 print("Setting up listening server")

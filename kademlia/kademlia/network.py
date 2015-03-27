@@ -3,7 +3,6 @@ Package for interacting on the network at a high level.
 """
 import random
 import pickle
-from reportlab.lib.pdfencrypt import encryptionkey
 
 from twisted.internet.task import LoopingCall
 from twisted.internet import defer, reactor, task
@@ -18,6 +17,9 @@ from kademlia.crawling import NodeSpiderCrawl
 from protocol import decodeTimestamp
 from protocol import encodeTimestamp
 
+import datetime
+
+from simplecrypt import encrypt, decrypt, DecryptionException
 
 class Server(object):
     """
@@ -139,6 +141,7 @@ class Server(object):
         Returns:
             :class:`None` if not found, the value otherwise.
         """
+        self.log.debug("Finding value at %s" % key)
         node = Node(digest(key))
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
@@ -186,6 +189,59 @@ class Server(object):
             return defer.succeed(False)
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find().addCallback(store)
+
+    def set_contact_info(self, user_id, contact_info_list, contact_info_encryption_key, sequence_encryption_key):
+        current_time = datetime.datetime.utcnow()
+        self.log.debug("Current time is : %s" % current_time.strftime("%Y%m%d%M"))
+        current_time = current_time - datetime.timedelta(minutes=current_time.minute % 5, seconds=current_time.second,
+                                                         microseconds=current_time.microsecond)
+        self.log.debug("Rounted time is : %s" % current_time.strftime("%Y%m%d%M"))
+
+        key = user_id + current_time.strftime("%Y%m%d%M")
+        contact_info_list = pickle.dumps(contact_info_list)
+        self.log.debug("Pickled: %s" % str(contact_info_list))
+        return self.set(key, encrypt(contact_info_encryption_key, contact_info_list), sequence_encryption_key)
+
+    def get_contact_info(self, user_id, contact_info_encryption_key):
+        currentTime = datetime.datetime.utcnow()
+        self.log.debug("Current time is : %s" % currentTime.strftime("%Y%m%d%M"))
+        currentTime = currentTime - datetime.timedelta(minutes=currentTime.minute % 5, seconds=currentTime.second,
+                                                         microseconds=currentTime.microsecond)
+        self.log.debug("Rounted time is : %s" % currentTime.strftime("%Y%m%d%M"))
+
+        def unpackResult(result=None):
+            if not result:
+                return None
+            self.log.debug("Unpacking %s" % str(result))
+            try:
+                output = pickle.loads(decrypt(contact_info_encryption_key, result[0]))
+                self.log.debug("unpack output: %s" % str(output))
+                return output
+            except DecryptionException:
+                self.log.debug("Failed to decrypt info")
+                return None
+
+        def bundleResults(resultList):
+            contact_list = []
+            for result in resultList:
+                if type(result) is list:
+                    for contact in (y for y in result if y not in contact_list):
+                        contact_list.append(contact)
+                else:
+                    if result:
+                        contact_list.append(result)
+
+            return contact_list
+
+        oldTime = currentTime - datetime.timedelta(minutes=-5)
+        futureTime = currentTime - datetime.timedelta(minutes=5)
+        oldTimeDef = self.get(user_id + oldTime.strftime("%Y%m%d%M")).addCallback(unpackResult)
+        currentTimeDef = self.get(user_id + currentTime.strftime("%Y%m%d%M")).addCallback(unpackResult)
+        futureTimeDef = self.get(user_id + futureTime.strftime("%Y%m%d%M")).addCallback(unpackResult)
+
+        results = defer.gatherResults([oldTimeDef, currentTimeDef, futureTimeDef], consumeErrors=False)
+        self.log.debug("Gathered %s" % results)
+        return results.addCallback(bundleResults)
 
     def set(self, key, value, encryption_key, timestamp=None):
         """

@@ -136,6 +136,7 @@ class KademliaProtocol(RPCProtocol):
         we get no response, make sure it's removed from the routing table.
         """
         if result[0]:
+            self.log.debug("Result is %s" % str(result))
             self.log.info("got response from %s, adding to router" % node)
             self.router.addContact(node)
             if self.router.isNewNode(node):
