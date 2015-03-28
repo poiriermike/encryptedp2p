@@ -7,13 +7,13 @@ import pickle
 from twisted.internet.task import LoopingCall
 from twisted.internet import defer, reactor, task
 
-from kademlia.log import Logger
-from kademlia.protocol import KademliaProtocol
-from kademlia.utils import deferredDict, digest
-from kademlia.storage import ForgetfulStorage
-from kademlia.node import Node
-from kademlia.crawling import ValueSpiderCrawl
-from kademlia.crawling import NodeSpiderCrawl
+from log import Logger
+from protocol import KademliaProtocol
+from utils import deferredDict, digest
+from storage import ForgetfulStorage
+from node import Node
+from crawling import ValueSpiderCrawl
+from crawling import NodeSpiderCrawl
 from protocol import decodeTimestamp
 from protocol import encodeTimestamp
 
@@ -150,6 +150,12 @@ class Server(object):
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find()
 
+    def sendMessage(self, message, addr, port):
+        self.protocol.callSend(message, addr, port)
+
+    def pollReceivedMessages(self):
+        return self.protocol.getMessages()
+
     def _setWithTimestamp(self, existingValue, key, value, requestedTimeStamp, encryptionKey):
         """
         Sends the command to store the key/value pair on all required nodes.
@@ -190,7 +196,7 @@ class Server(object):
         spider = NodeSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find().addCallback(store)
 
-    def set_contact_info(self, user_id, contact_info_list, contact_info_encryption_key, sequence_encryption_key):
+    def setContactInfo(self, user_id, contact_info_list, contact_info_encryption_key, sequence_encryption_key):
         current_time = datetime.datetime.utcnow()
         self.log.debug("Current time is : %s" % current_time.strftime("%Y%m%d%M"))
         current_time = current_time - datetime.timedelta(minutes=current_time.minute % 5, seconds=current_time.second,
@@ -202,7 +208,7 @@ class Server(object):
         self.log.debug("Pickled: %s" % str(contact_info_list))
         return self.set(key, encrypt(contact_info_encryption_key, contact_info_list), sequence_encryption_key)
 
-    def get_contact_info(self, user_id, contact_info_encryption_key):
+    def getContactInfo(self, user_id, contact_info_encryption_key):
         currentTime = datetime.datetime.utcnow()
         self.log.debug("Current time is : %s" % currentTime.strftime("%Y%m%d%M"))
         currentTime = currentTime - datetime.timedelta(minutes=currentTime.minute % 5, seconds=currentTime.second,

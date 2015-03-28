@@ -6,6 +6,7 @@ PROJECT DESCRIPTION
 
 The goal of our project is to build a decentralized peer to peer chat system. This means a system which does not rely on any single server in order to work. Our focus for the first phase of this project is to use a distributed hash table system to keep track of live notes across the network. The hash table will allow network nodes (eventually chat system users) to find each other on the network and setup a direct connection.
 
+The second phase of our project involved us hooking up the hash table to a front end client, sending messages, and  building some security into the table itself to avoid malicious parties from poisoning the table. 
 
 
 -Code Structure-
@@ -113,8 +114,11 @@ http://www.openbookproject.net/py4fun/gui/wxPhone.html
 
 Here is a comprehensive list of GUIs that could work with Twisted: http://twistedmatrix.com/documents/13.2.0/core/howto/choosing-reactor.html
 
-
-
+----------------------------------------------------------------------------------------------------------------------------
+Videos!
+This is a proof of concept video. 
+https://youtu.be/NVkZQG3EdkI
+You didn't see the stacktrace...
 ----------------------------------------------------------------------------------------------------------------------------
 OTHER STUFF
 

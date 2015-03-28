@@ -3,6 +3,7 @@ import sys,os,socket,argparse
 sys.path.insert(0, "kademlia")
 from twisted.internet import reactor, tksupport, task
 from twisted.python import log
+from twisted.internet.task import LoopingCall
 from kademlia.network import Server
 
 try: #python 2
@@ -27,13 +28,12 @@ import config
 # This is a simple node on the network.
 # Some fancy argument parsing. cause I'm cool like that.
 parser = argparse.ArgumentParser()
-parser.add_argument('-p', '--port', dest='port', type=str, action='store', default=False, help='Set the kademlia port. Overrides the config file.')
+parser.add_argument('-p', '--port', dest='port', type=str, action='store', default=False, help='Set the application''s port. Overrides the config file.')
 parser.add_argument('-l', '--log', dest='log', type=str, action='store', default=False, help='Specify a log file to output to. Default is stdout.')
 parser.add_argument('-s', '--save', dest='save', action='store_true', default=False, help='Specify whether you want to save a state. Overrides the config file.')
 parser.add_argument('-I', '--bsip', dest='bsip', type=str, action='store', default=False, help='Set the bootstrap server IP. Overrides the config file.')
 parser.add_argument('-P', '--bsport', dest='bsport', type=str, action='store', default=False, help='Set the bootstrap server port. Overrides the config file.')
 parser.add_argument('-N', '--nogui', dest='nogui', action='store_true', default=False, help='Do not run the GUI part of the node')
-parser.add_argument('-c', '--client', dest='client', type=int, action='store', default=False, help='Set up the port for the client. Overrides the config file.')
 parser.add_argument('-r', '--refresh', dest='refresh', action='store_true', default=False, help='Automatically refresh the contact list.')
 args = parser.parse_args()
 
@@ -72,13 +72,9 @@ if args.log:
 else:
     log.startLogging(sys.stdout)
 
-kad_port = int(config.kademlia_port)
+port = int(config.port)
 if args.port:
-    kad_port = int(args.port)
-
-client_port = int(config.chat_port)
-if args.client:
-    client_port = int(args.client)
+    port = int(args.port)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Begin Support Code
@@ -94,8 +90,11 @@ def set(myIP, server):
                 if len(id) == 2:
                     log.msg("Adding identity to table with username " + str(id[1]) + " and key " + str(id[0]))
                     myIP[0] = list(myIP[0])
-                    myIP[0][1] = client_port
-                    server.set(str(id[0]) + str(id[1]), myIP)
+                    myIP[0][1] = port
+                    # server.set(str(id[0]) + str(id[1]), myIP)
+                    # TODO: Figure out how we want to store keys! These are just hard coded right now, the
+                    #   same for every user.
+                    server.setContactInfo(str(id[0]) + str(id[1]), myIP, str(id[0]), "public_key")
                     username = str(id[1])
                 else:
                     log.err("Error adding identity file.")
@@ -113,7 +112,7 @@ def getIPs(stuff, morestuff):
 # Starts setting up the local server to run
 log.msg("Setting up listening server")
 server = Server()
-server.listen(int(kad_port))
+server.listen(int(port))
 
 if os.path.isfile(backup):
     server.loadState(backup)
@@ -133,85 +132,12 @@ from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Pro
 
 from twisted.internet import protocol, reactor, stdio
 from twisted.protocols import basic
-import unicodedata
-
-
-class EchoServerProtocol(basic.LineReceiver):
-
-    def connectionMade(self):
-        global clientFactory
-        #peerInfo = self.transport.getPeer() #Untested - may not work
-        #log.msg("Server Recieved: Connection from " + str(peerInfo[1]) +" on port "+ str(peerInfo[2]))
-        #reactor.connectTCP(peerInfo[1], peerInfo[2], clientFactory)
-
-    def lineReceived(self, line):
-        log.msg("Server Recieved: " + line)
-        factory = protocol.ClientFactory()
-        factory.protocol = EchoClientProtocol
-
-        chatWindowPrintText(line)
-
-class EchoClientProtocol(basic.LineReceiver):
-    def connectionMade(self):
-        global username
-        self.setName(username)
-
-        log.msg("Client Send: " + self.name + " Connected")
-        self.sendLine(self.name + " Connected\n")
-
-
-    def setName(self, name):
-        if self.users.has_key(name) or name.lower() == 'server':
-            self.sendLine('That username is in use!\r\nUsername: ')
-            self.setName(str(name+'*'))
-        elif ' ' in name:
-            self.sendLine('No spaces are allowed in usernames!\r\nUsername: ')
-        elif name == '':
-            self.sendLine('You must enter a username!\r\nUsername: ')
-        else:
-            self.users[name] = self
-            self.name = name
-
-    def sendMessage(self, text):
-        #log.msg("Client Send: "+text)
-
-        #Send line does not allow unicode strings, so we convert it before sending
-        normalized = unicodedata.normalize('NFKD', text).encode('ascii','ignore')
-        self.sendLine(self.name + ": " + normalized)
-
-    def __init__(self,addr=None,users=None):
-        self.name = None
-        self.addr = addr
-        self.users = users
-
-class ClientFactory(Factory):
-    protocol = EchoClientProtocol
-
-    def startedConnecting(self, connector):
-        log.msg("ClientFactory: Starting to connect")
-
-    def buildProtocol(self, addr):
-        log.msg("ClientFactory: build Protocol")
-        return EchoClientProtocol(addr=addr,users=self.users)
-
-    def clientConnectionLost(self, connector, reason):
-        log.msg("ClientFactory: Connection Lost")
-        chatWindowPrintText("Connection Lost")
-    def clientConnectionFailed(self, connector, reason):
-        log.msg("ClientFactory: Connection Failed")
-        chatWindowPrintText("Unable to connect")
-
-    def __init__(self):
-        self.users = {}
-        self.name = None
 
 # list boxes in GUI for displaying and selecting contact info
 ConnectionsList = []
 
 chatWindow = NONE
 textEntry = NONE
-
-clientFactory = NONE
 
 # print givent text in the chat text window
 def chatWindowPrintText(text):
@@ -231,26 +157,42 @@ def sendChatMessage(event):
     global clientFactory
 
     if event.keysym == 'Return':
+        selectedContact = updateSelectedContact()
+        
+        if(selectedContact == None):
+            chatWindowPrintText("No Contact Selected\n")
+            return False
+
+        selectedIP = selectedContact['ip']
+        selectedPort = selectedContact['port']
+
+        if selectedIP is NONE or selectedPort is None:
+            return False
+
         message = textEntry.get('0.0', END)
         textEntry.delete('0.0', END)
 
         message = message.lstrip()
-        chatWindowPrintText("Me: "+message)
+        if message != "":
+            chatWindowPrintText("Me: "+message)
+            log.msg("Client Send: " + message)
+            server.sendMessage(username + ": " + message, selectedIP, selectedPort)
 
-        #Send the message to other users
-        if clientFactory is not NONE:
-            for name in clientFactory.users:
-                #TODO avoid sending the message to ourselves
-                clientFactory.users[name].sendMessage(message)
+def pollForMessage():
+    messages = server.pollReceivedMessages()
+    
+    if messages is None:
+        return
+
+    for message in messages:
+        if message != "":
+            log.msg("Server Recieved: " + message)
+            chatWindowPrintText(message)
 
 # Takes the result from the DHT and parses out the IP and port
 # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
 def get_contact_location(result, contact):
     if result is not None:
-        #contact['ip'] = result[0][0]
-        #contact['port'] = result[0][1] #TODO causing exception?
-
-        #TODO fix this! - temp fix to avoid exceptionns while it is incorrect
         contact['ip'] = result[0][0][0]
         contact['port'] = result[0][0][1]
 
@@ -260,7 +202,9 @@ def refreshAvailIP():
     log.msg("Refreshing Contact List automagically")
     for contact in Contacts:
         # This adds the get_ip function to the server callback list. Will do so for each contact
-        server.get(contact['key'] + contact['username']).addCallback(get_contact_location, contact)
+        #server.get(contact['key'] + contact['username']).addCallback(get_contact_location, contact)
+        server.getContactInfo(contact['key'] + contact['username'], contact['key']).\
+            addCallback(get_contact_location, contact)
 
     #clear the listboxes in the GUI of old values
     ConnectionsList[0].delete(0, END)
@@ -279,33 +223,20 @@ def refreshAvailIP():
 # update the global selected IP address
 def updateSelectedContact():
 
-    selectedContact = None
+    selectedName = ConnectionsList[0].get(ACTIVE)
     selectedIP = ConnectionsList[1].get(ACTIVE)
-    selectedContact = Contacts[0] #TODO find the correct contact here
-    return selectedContact
 
+    for contact in Contacts:
+        if contact['ip'] == selectedIP and contact['username'] == selectedName:
+            return contact
+    return None
 
-# connect to the selected IP address
-def connectToIP():
+#method is called by a ConnectionsList list box when the selection is changed. Updates other accordingly
+def syncListSelections(evt=None, listIndex=0):
 
-    global clientFactory
-    # get the contact from the gui selection
-    selectedContact = updateSelectedContact()
-
-    if(selectedContact == None):
-        chatWindowPrintText("No Contact Selected\n")
-        return False
-
-    selectedIP = selectedContact['ip']
-    selectedPort = selectedContact['port']
-
-    if selectedIP is NONE or selectedPort is None:
-        return False
-
-    chatWindowPrintText("Attempting to connect to "+selectedIP+"\n")
-    log.msg("Client attempting to connect to "+selectedIP+" on port "+str(selectedPort))
-    reactor.connectTCP(selectedIP, selectedPort, clientFactory)
-    return True
+    otherindex = (listIndex +1) % 2
+    toset = ConnectionsList[listIndex].curselection()
+    ConnectionsList[otherindex].activate(toset[0])
 
 def closeProgram():
     reactor.stop()
@@ -328,6 +259,9 @@ def initializeGUI():
 
     ConnectionsList[0].grid(row=0, column=0)
     ConnectionsList[1].grid(row=0, column=1)
+
+    ConnectionsList[0].bind("<<ListboxSelect>>", lambda e:syncListSelections(e, listIndex=0))
+    ConnectionsList[1].bind("<<ListboxSelect>>", lambda e:syncListSelections(e, listIndex=1))
 
     #set up chat window with scroll bar
     chatTextFrame = Frame(root)
@@ -359,21 +293,10 @@ def initializeGUI():
     exitButton = Button(root, text="Exit Program", command=closeProgram)
     exitButton.pack(side=RIGHT)
 
-    connectButton = Button(root, text="Connect", command=connectToIP)
-    connectButton.pack(side=RIGHT)
+    #connectButton = Button(root, text="Connect", command=None)#connectToIP)
+    #connectButton.pack(side=RIGHT)
 
     return root
-
-#start a server for the chat service and GUI
-factory = protocol.ServerFactory()
-factory.protocol = EchoServerProtocol
-try:
-    reactor.listenTCP(client_port, factory)
-except: #won't break absolutly everything if you run two instances on one machine
-    log.err("Error starting Chat Server: port in use")
-
-# set up the client gui connection service
-clientFactory = ClientFactory()
 
 #set up the gui root and connect it to the reactor
 if not args.nogui:
@@ -384,6 +307,9 @@ if not args.nogui:
 if args.refresh:
     contact_refresh_loop = task.LoopingCall(refreshAvailIP)
     contact_refresh_loop.start(10)
+
+message_polling_loop = task.LoopingCall(pollForMessage)
+message_polling_loop.start(1)
 
 # starts the execution of the server code
 reactor.run()
