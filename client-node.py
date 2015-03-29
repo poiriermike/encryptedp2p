@@ -192,9 +192,12 @@ def pollForMessage():
 # Takes the result from the DHT and parses out the IP and port
 # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
 def get_contact_location(result, contact):
-    if result is not None:
-        contact['ip'] = result[0][0][0]
-        contact['port'] = result[0][0][1]
+    print("==========================================================================")
+    print(result)
+    print("==========================================================================")
+    if result is not None and result != []:
+        contact['ip'] = result[0][0]
+        contact['port'] = result[0][1]
 
 # Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
 def refreshAvailIP():
