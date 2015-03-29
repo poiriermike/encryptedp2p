@@ -91,7 +91,10 @@ def set(myIP, server):
                     log.msg("Adding identity to table with username " + str(id[1]) + " and key " + str(id[0]))
                     myIP[0] = list(myIP[0])
                     myIP[0][1] = port
-                    server.set(str(id[0]) + str(id[1]), myIP)
+                    # server.set(str(id[0]) + str(id[1]), myIP)
+                    # TODO: Figure out how we want to store keys! These are just hard coded right now, the
+                    #   same for every user.
+                    server.setContactInfo(str(id[0]) + str(id[1]), myIP, str(id[0]), "public_key")
                     username = str(id[1])
                 else:
                     log.err("Error adding identity file.")
@@ -199,7 +202,9 @@ def refreshAvailIP():
     log.msg("Refreshing Contact List automagically")
     for contact in Contacts:
         # This adds the get_ip function to the server callback list. Will do so for each contact
-        server.get(contact['key'] + contact['username']).addCallback(get_contact_location, contact)
+        #server.get(contact['key'] + contact['username']).addCallback(get_contact_location, contact)
+        server.getContactInfo(contact['key'] + contact['username'], contact['key']).\
+            addCallback(get_contact_location, contact)
 
     #clear the listboxes in the GUI of old values
     ConnectionsList[0].delete(0, END)

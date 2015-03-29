@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 # This is a list of nodes it "Knows" exists on the network. We can probably move this into a text file in the future and
 # implement it how we were discussing last week.
-known_nodes = [(("10.0.0.238", 5050))]
+known_nodes = [("127.0.0.1", 8000)] #,("127.0.0.1", 8001), ("127.0.0.1", 5050)]
 
 if args.file:
     if os.path.isfile(args.file):
@@ -48,14 +48,15 @@ def get(result, server):
     print("Grabbing the result from the server")
     # Gets the specified key/value pair from the server, then it will call the print_result function with the retrieved
     # value
-    server.get(socket.gethostname()).addCallback(print_result)
+    #server.get(socket.gethostname()).addCallback(print_result)
+    server.getContactInfo(socket.gethostname(), "testkey").addCallback(print_result)
 
 # Simple function to call upon a server bootstrap. It will add a key/value pair to the hash table
 def set(stuff, morestuff):
     print("I'm doing things!")
     # Sets a key/value pair in the DHT, then calls the get function, with the server.
-    server.set(socket.gethostname(), socket.gethostname()).addCallback(get, server)
-
+    # server.set(socket.gethostname(), socket.gethostname(), "test").addCallback(get, server)
+    server.setContactInfo(socket.gethostname(), [("foo", "bar"), ("Hello", "World")], "testkey", "seqkey").addCallback(get, server)
 
 # Starts setting up the local server to run
 print("Setting up listening server")

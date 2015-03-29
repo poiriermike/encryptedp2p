@@ -3,6 +3,8 @@ from collections import Counter
 from kademlia.log import Logger
 from kademlia.utils import deferredDict
 from kademlia.node import Node, NodeHeap
+#from kademlia.protocol import decodeTimestamp
+import protocol
 
 
 class SpiderCrawl(object):
@@ -110,9 +112,9 @@ class ValueSpiderCrawl(SpiderCrawl):
         if len(valueCounts) != 1:
             args = (self.node.long_id, str(values))
             self.log.warning("Got multiple values for key %i: %s" % args)
-        value = sorted(values, key=lambda y: y[1])[-1:]
-        if value != None:
-            value = sorted(values, key=lambda y: y[1])[-1]
+        value = sorted(values, key=lambda y: protocol.decodeTimestamp(y[1], y[2]))[-1:]
+        if value is not None:
+            value = value[-1]
         #value = valueCounts.most_common(1)[0][0]
 
         peerToSaveTo = self.nearestWithoutValue.popleft()
