@@ -57,6 +57,8 @@ Run this because reasons 'sudo pip install rpcudp'
 
 install tkinter (needed for GUI) 'sudo apt-get install python-tk'
 
+Install simple-crypt 'pip install simple-crypt'
+
 Copy our code to a run directory:
 Specifically, client-node.py, dedicated-server.py, the config.py (optional), and the kademelia folder from our github repository.
 
