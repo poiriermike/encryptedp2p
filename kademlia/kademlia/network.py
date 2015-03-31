@@ -44,6 +44,12 @@ class Server(object):
         self.node = Node(id or digest(random.getrandbits(255)))
         self.protocol = KademliaProtocol(self.node, self.storage, ksize)
         self.refreshLoop = LoopingCall(self.refreshTable).start(3600)
+        self.ttlLoop = LoopingCall(self.countTTL).start(60, now=False)
+
+
+    def countTTL(self):
+        self.log.debug("Decrement TTL")
+        self.storage.decrementTTL()
 
     def listen(self, port):
         """
@@ -156,7 +162,7 @@ class Server(object):
     def pollReceivedMessages(self):
         return self.protocol.getMessages()
 
-    def _setWithTimestamp(self, existingValue, key, value, requestedTimeStamp, encryptionKey):
+    def _setWithTimestamp(self, existingValue, key, value, requestedTimeStamp, encryptionKey, ttl):
         """
         Sends the command to store the key/value pair on all required nodes.
         :param existingValue: The current (value,timestamp) associated with the key, if one exists.
@@ -184,7 +190,7 @@ class Server(object):
 
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
-            ds = [self.protocol.callStore(n, dkey, (value, encodeTimestamp(str(timestamp), encryptionKey), encryptionKey)) for n in nodes]
+            ds = [self.protocol.callStore(n, dkey, [value, encodeTimestamp(str(timestamp), encryptionKey), encryptionKey,ttl]) for n in nodes]
             return defer.DeferredList(ds).addCallback(self._anyRespondSuccess)
 
         node = Node(dkey)
@@ -249,7 +255,7 @@ class Server(object):
         self.log.debug("Gathered %s" % results)
         return results.addCallback(bundleResults)
 
-    def set(self, key, value, encryption_key, timestamp=None):
+    def set(self, key, value, encryption_key, timestamp=None, ttl_minutes=10):
         """
         Set the given key to the given value in the network. A timestamp will be automatically generated if one is not
         supplied. Values will only be accepted by the hash table if their timestamps are larger than the existing values.
@@ -260,10 +266,10 @@ class Server(object):
         """
         if timestamp is None:
             self.log.debug("Checking for existing timestamp of '%s' on network before setting '%s'" % (value, key))
-            return self.get(key).addCallback(self._setWithTimestamp, key=key, value=value, requestedTimeStamp=None, encryptionKey=encryption_key)
+            return self.get(key).addCallback(self._setWithTimestamp, key=key, value=value, requestedTimeStamp=None, encryptionKey=encryption_key, ttl=ttl_minutes)
         else:
             self.log.debug("Preparing to set '%s' = '%s' with explicit timestamp '%s'" % (str(key), str(value), str(timestamp)))
-            return self._setWithTimestamp(existingValue=None, key=key, value=value, requestedTimeStamp=timestamp, encryptionKey=encryption_key)
+            return self._setWithTimestamp(existingValue=None, key=key, value=value, requestedTimeStamp=timestamp, encryptionKey=encryption_key, ttl=ttl_minutes)
 
     def _anyRespondSuccess(self, responses):
         """
