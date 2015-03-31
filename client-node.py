@@ -281,8 +281,15 @@ def initializeGUI():
     chatEntryFrame = Frame(root)
     chatEntryFrame.pack()
 
+    scrollbar2 = Scrollbar(chatEntryFrame)
+    scrollbar2.pack(side=RIGHT, fill=Y)
+
     textEntry = Text(chatEntryFrame, height=2)
     textEntry.pack(side=LEFT)
+
+    scrollbar2.config(command=textEntry.yview)
+
+    #Bind key events to method calls
     textEntry.bind("<Key>", sendChatMessage)
     textEntry.bind("<KeyRelease>", clearText)
 
