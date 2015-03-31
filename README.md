@@ -6,7 +6,7 @@ PROJECT DESCRIPTION
 
 The goal of our project is to build a decentralized peer to peer chat system. This means a system which does not rely on any single server in order to work. Our focus for the first phase of this project is to use a distributed hash table system to keep track of live notes across the network. The hash table will allow network nodes (eventually chat system users) to find each other on the network and setup a direct connection.
 
-The second phase of our project involved us hooking up the hash table to a front end client, sending messages, and  building some security into the table itself to avoid malicious parties from poisoning the table. 
+The second phase of our project involved us hooking up the hash table to a front end client, sending messages, and  building some security into the table itself to avoid malicious parties from poisoning the table.
 
 
 -Code Structure-
@@ -15,7 +15,7 @@ Originally we had though to build our own distributed hash table, but that was a
 
 -Modifications to the existing Kademlia library
 
-The Kademlia distributed hash table relies on fairly stable nodes. For a chat system it is quite likely that nodes (chat clients) will be starting and stopping quite often, and the network connecting them may be unstable. As an example a user running the client on a laptop may move away from a wi-fi hotspot which disconnects them from the network. When a node becomes disconnected from the network it can no longer update values to the hash table or be updated. Once it reconnects it may be storing stale values, or have new values which need to be pushed into the table. We added a timestamp to every value stored in the hash table so that the newest values are used if there is any conflict. A single new value will over-ride a large number of old values when the table is queried.
+The Kademlia distributed hash table relies on fairly stable nodes. For a chat system it is quite likely that nodes (chat clients) will be starting and stopping quite often, and the network connecting them may be unstable. As an example a user running the client on a laptop may move away from a Wi-Fi hotspot which disconnects them from the network. When a node becomes disconnected from the network it can no longer update values to the hash table or be updated. Once it reconnects it may be storing stale values, or have new values which need to be pushed into the table. We added a timestamp to every value stored in the hash table so that the newest values are used if there is any conflict. A single new value will over-ride a large number of old values when the table is queried.
 
 The timestamps start at zero and are incremented each time the value is updated. To do this the library will check the current timestamp of the key in the table by accessing the hash table normally, if there is no value stored it will start from zero, otherwise it will increment by one. This will likely decrease the performance of the set() method but any delay here is inherent in the nature of the distributed hash table and will affect the entire program. If the delay is an issue it will have to be solved for the entire program.
 
@@ -32,7 +32,7 @@ Second, we tested what happened when old nodes (that had disconnected before) we
 
 -Future Tests-
 
-In future, we would like to experiment with different network connectivity speeds, limited bandwidths, and forced partial connectivity cases across the connected nodes. Ensuring our system could handle these scenarios would be prefered, but setting up the testing system for achieving these reliable was outside of this project's scope.
+In future, we would like to experiment with different network connectivity speeds, limited bandwidths, and forced partial connectivity cases across the connected nodes. Ensuring our system could handle these scenarios would be preferred, but setting up the testing system for achieving these reliable was outside of this project's scope.
 
 Another thing we would like to test is the systems security. With the current system, it is entirely possible to overwhelm the system with false timestamps, thereby poisoning the entries. Testing this will help us devise a potential solution to our modified code.
 
@@ -42,44 +42,44 @@ RUN INSTRUCTIONS
 
 -Setup-
 
-For each computer in the network do the following.
-We recommend using fabric to run all these instructions in parallel on all the nodes.
-
-Note: ensure that apt-get is up to date (run 'apt-get update')
-
 Ensure Python is installed. Version 2.7 works if 3.4 does not
+Note: ensure that apt-get is up to date (run 'apt-get update') (if using ubuntu)
 
-Install python-dev library. This can be done on linux using 'sudo apt-get install python-dev -y'
+To Run a dedicated server:
 
-Install Twisted. Do this using 'sudo pip install twisted'
+'sudo apt-get install python-pip python-dev -y'
 
-Run this because reasons 'sudo pip install rpcudp'
+'sudo pip install twisted rpcudp simple-crypt'
 
-install tkinter (needed for GUI) 'sudo apt-get install python-tk'
+To run the a client node, do all the steps above and:
 
-Install simple-crypt 'pip install simple-crypt'
+'sudo apt-get install python-tk'
+
 
 Copy our code to a run directory:
 Specifically, client-node.py, dedicated-server.py, the config.py (optional), and the kademelia folder from our github repository.
 
-Make sure to maintain the directory structure. The cilent-node and dedicated-server should be in the same directory as the kademlia server. 
+Make sure to maintain the directory structure. The cilent-node and dedicated-server should be in the same directory as the kademlia server.
 
 You should also have two text files in your run directory. An identity.txt file that contains your public key as well as your username, space separated.
 Plus a contacts.txt file containing the public keys and usernames of your contacts/friends, again space separated.
 
-Optionally, you can have a bootstrap.txt file with space separated IP/port pairs that will supply the client with a list 
-of bootstrappable nodes to check. 
+Both files should take the form:
+<key> <name>
+
+Optionally, you can have a bootstrap.txt file with space separated IP/port pairs that will supply the client with a list
+of bootstrappable nodes to check.
 
 -Run-
 
 Run 'python dedicated-server.py -p \<port\>' on at least one network node.
 This starts a server meant to get the initial system running. After that, the client nodes should be able to connect to each other.
 
-To run your chat client. Run the client-node.py file. 
+To run your chat client. Run the client-node.py file.
 
 python client-node.py
 
-There are a number of options you can use to run the client node. Those annotated with a * will override the value set in your config.txt 
+There are a number of options you can use to run the client node. Those annotated with a * will override the value set in your config.txt
 file:
 
 - -p \<the port you are running your kademlia server on\>*
@@ -87,10 +87,7 @@ file:
 - -P \<A bootstarppable port for the IP above.\>*
 - -l \<A log file to save to (defaults to stdout)\>*
 - -N \<An option to run the client without a GUI (currently not functional WITHOUT a GUI)\>
-- -c \<Port to run the chat client on.\>*
 - -r \<Refresh your contacts list every 10 seconds (otherwise has to be done manually)\>
-
-Currently the chat part of the system does not support NAT traversal. We are currently looking at possible solutions.
 
 ----------------------------------------------------------------------------------------------------------------------------
 -The Future-
@@ -98,7 +95,7 @@ Currently the chat part of the system does not support NAT traversal. We are cur
 For the next part of the project. We plan to flesh our modifications to Kademlia, build more robust test cases, test NAT traversal etc.
 
 
-The next steps for kademlia involve adding secure communications on top of the existing backend. Currently all information is stored as plain text which is not useful for a secure chat application. Any malicious client can currently overwrite key/value pairs through two ways. If the client knows a user's key they can set a new value for that user through normal means. If a malicious client does not have any users' keys they can check the keys stored on their local node and use those keys (although this is not useful for targeting a specific user it can still disrupt the system). There needs to be some way to stop these clients from pushing values with a larger sequence number to redirect traffic. Likely the easiest way to secure the tables is by using a difficult to determine key and encrypting the values. A malicious user will be able to set values in the table at random, but not target a specific user. The desired recipient will need both the key, and a way to decode the value. Using a public encryption key for both the table key and decrypting the value would be easy but it means that any time a node stores a value the key can be compromised. 
+The next steps for kademlia involve adding secure communications on top of the existing backend. Currently all information is stored as plain text which is not useful for a secure chat application. Any malicious client can currently overwrite key/value pairs through two ways. If the client knows a user's key they can set a new value for that user through normal means. If a malicious client does not have any users' keys they can check the keys stored on their local node and use those keys (although this is not useful for targeting a specific user it can still disrupt the system). There needs to be some way to stop these clients from pushing values with a larger sequence number to redirect traffic. Likely the easiest way to secure the tables is by using a difficult to determine key and encrypting the values. A malicious user will be able to set values in the table at random, but not target a specific user. The desired recipient will need both the key, and a way to decode the value. Using a public encryption key for both the table key and decrypting the value would be easy but it means that any time a node stores a value the key can be compromised.
 
 Stopping broad attacks against the table is much harder however. There needs to be some way to detect and stop malicious clients which are trying to push values onto the table for keys which belong to other clients. This is difficult since ideally the public key of a user should never be shared to the hash table, only directly between two users who wish to chat.
 
@@ -106,19 +103,15 @@ The hash table should also handle time stamped values better. If a node is separ
 
 The ideal level of replication inside Kademlia still needs to be determined. This should be based on how likely a node is to go down (how long does an average user keep a chat application up), how often do we want to republish values to the table (every 5 - 10 minutes maybe), and what level of reliability is desired. This feels like it should be independent of the number of users but doing a quick statistical analysis might be interesting.
 
-After solidifying Kademlia, we will start building our P2P client on top of it. 
-
-
-A major stretch goal would be to build a Python GUI to create a "usable" client.
-Possible libraries we can use for an event given GUI would be Tkinter: http://www.openbookproject.net/py4fun/gui/tkPhone.html
-or  wxPython:
-http://www.openbookproject.net/py4fun/gui/wxPhone.html
-
-Here is a comprehensive list of GUIs that could work with Twisted: http://twistedmatrix.com/documents/13.2.0/core/howto/choosing-reactor.html
+We have a GUI to work with our chat client, and it does function to some extent. However there is still work to be done:
+- In order to deal with NAT traversal, we will poll the other nodes for our public ip/port. However, different nodes can see different IP/port pairs. We need to add in functionality to determine which IP/port pair will work when trying to communicate with another client.
+- The encryption scheme we use at present is very slow, and it halts the rest of the application. There are likely ways we can improve performance.
+- Currently chats are all sent and received in the same window. So it is hard to tell each conversation apart. An update to the GUI would be to separate each conversation.
+- When a client disconnects, they don't tell the swarm they have left. Their value is still in the DHT and they are still considered to be "online", but chat will not connect. Upon shutting down, the value should be removed from the DHT, therefore telling the world the node is offline.
 
 ----------------------------------------------------------------------------------------------------------------------------
 Videos!
-This is a proof of concept video. 
+This is a proof of concept video.
 https://youtu.be/NVkZQG3EdkI
 You didn't see the stacktrace...
 ----------------------------------------------------------------------------------------------------------------------------
@@ -141,6 +134,3 @@ NOTE: This Python library requires the python-dev package to run. On Ubuntu base
 https://twistedmatrix.com/trac/
 
 http://findingscience.com/python/kademlia/dht/2014/02/14/kademlia:-a-dht-in-python.html
-
-
-
