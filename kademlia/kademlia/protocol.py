@@ -78,7 +78,7 @@ class KademliaProtocol(RPCProtocol):
             return True
         else:
             self.log.debug("IGNORING a store request from %s, existing timestamp %s is larger than new %s" % (str(sender), str(existingTimestamp), str(newTimestamp)))
-            return False
+            return True
 
     def rpc_send(self, sender, message):
         self.log.info("Received message: \"" + message.strip("\n") + "\" from address " + str(sender))
