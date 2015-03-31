@@ -273,23 +273,32 @@ def initializeGUI():
 
     #set up chat window with scroll bar
     chatTextFrame = Frame(root)
-    chatTextFrame.pack()
 
     scrollbar = Scrollbar(chatTextFrame)
     scrollbar.pack(side=RIGHT, fill=Y)
 
     chatWindow = Text(chatTextFrame, height=8, state=DISABLED)
-    chatWindow.pack(side=LEFT, fill=BOTH)
+    chatWindow.pack(side=LEFT, expand=YES, fill=BOTH)
 
     scrollbar.config(command=chatWindow.yview)
     chatWindow.config(yscrollcommand=scrollbar.set)
 
+    chatTextFrame.pack(expand=YES, fill=BOTH)
+
     #set up user text field for input
     chatEntryFrame = Frame(root)
-    chatEntryFrame.pack()
+
+    scrollbar2 = Scrollbar(chatEntryFrame)
+    scrollbar2.pack(side=RIGHT, fill=Y)
 
     textEntry = Text(chatEntryFrame, height=2)
-    textEntry.pack(side=LEFT)
+    textEntry.pack(side=LEFT, expand=YES, fill=BOTH)
+
+    scrollbar2.config(command=textEntry.yview)
+
+    chatEntryFrame.pack(expand=YES, fill=BOTH)
+
+    #Bind key events to method calls
     textEntry.bind("<Key>", sendChatMessage)
     textEntry.bind("<KeyRelease>", clearText)
 
