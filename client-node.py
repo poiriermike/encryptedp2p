@@ -124,7 +124,14 @@ if args.save:
         server.saveStateRegularly(backup, 300)
 
 # The addCallback can be added to many of the server functions, and can be used to chain call functions
-server.bootstrap(known_nodes).addCallback(getIPs, server)
+#server.bootstrap(known_nodes).addCallback(getIPs, server)
+
+
+def setContactInfo():
+    return server.bootstrap(known_nodes).addCallback(getIPs, server)
+
+updateInfo = task.LoopingCall(setContactInfo)
+updateInfo.start(300)
 
 # ----------------------------------------------------------------------------------------------------------------------
 #Begin GUI code
