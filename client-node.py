@@ -89,8 +89,9 @@ def set(myIP, server):
                 id = line.split()
                 if len(id) == 2:
                     log.msg("Adding identity to table with username " + str(id[1]) + " and key " + str(id[0]))
-                    myIP[0] = list(myIP[0])
-                    myIP[0][1] = port
+                    if myIP != []:
+                        myIP[0] = list(myIP[0])
+                    #myIP[0][1] = port
                     # server.set(str(id[0]) + str(id[1]), myIP)
                     # TODO: Figure out how we want to store keys! These are just hard coded right now, the
                     #   same for every user.
