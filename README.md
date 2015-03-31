@@ -103,15 +103,11 @@ The hash table should also handle time stamped values better. If a node is separ
 
 The ideal level of replication inside Kademlia still needs to be determined. This should be based on how likely a node is to go down (how long does an average user keep a chat application up), how often do we want to republish values to the table (every 5 - 10 minutes maybe), and what level of reliability is desired. This feels like it should be independent of the number of users but doing a quick statistical analysis might be interesting.
 
-After solidifying Kademlia, we will start building our P2P client on top of it.
-
-
-A major stretch goal would be to build a Python GUI to create a "usable" client.
-Possible libraries we can use for an event given GUI would be Tkinter: http://www.openbookproject.net/py4fun/gui/tkPhone.html
-or  wxPython:
-http://www.openbookproject.net/py4fun/gui/wxPhone.html
-
-Here is a comprehensive list of GUIs that could work with Twisted: http://twistedmatrix.com/documents/13.2.0/core/howto/choosing-reactor.html
+We have a GUI to work with our chat client, and it does function to some extent. However there is still work to be done:
+- In order to deal with NAT traversal, we will poll the other nodes for our public ip/port. However, different nodes can see different IP/port pairs. We need to add in functionality to determine which IP/port pair will work when trying to communicate with another client.
+- The encryption scheme we use at present is very slow, and it halts the rest of the application. There are likely ways we can improve performance.
+- Currently chats are all sent and received in the same window. So it is hard to tell each conversation apart. An update to the GUI would be to separate each conversation.
+- When a client disconnects, they don't tell the swarm they have left. Their value is still in the DHT and they are still considered to be "online", but chat will not connect. Upon shutting down, the value should be removed from the DHT, therefore telling the world the node is offline.
 
 ----------------------------------------------------------------------------------------------------------------------------
 Videos!
