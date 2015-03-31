@@ -8,6 +8,7 @@ from collections import OrderedDict
 from zope.interface import implements
 from zope.interface import Interface
 
+from log import Logger
 
 class IStorage(Interface):
     """
@@ -49,6 +50,7 @@ class ForgetfulStorage(object):
         """
         self.data = OrderedDict()
         self.ttl = ttl
+        self.log = Logger(system=self)
 
     def __setitem__(self, key, value):
         if key in self.data:
@@ -59,6 +61,7 @@ class ForgetfulStorage(object):
     def cull(self):
         for k, v in self.iteritemsOlderThan(self.ttl):
             self.data.popitem(last=False)
+            self.log.debug("Culling value")
 
     def get(self, key, default=None):
         self.cull()
@@ -81,7 +84,7 @@ class ForgetfulStorage(object):
     def iteritemsOlderThan(self, secondsOld):
         minBirthday = time.time() - secondsOld
         zipped = self._tripleIterable()
-        matches = takewhile(lambda r: minBirthday >= r[1], zipped)
+        matches = takewhile(lambda r: minBirthday >= r[1] or r[2][3] <= 0, zipped)
         return imap(operator.itemgetter(0, 2), matches)
 
     def _tripleIterable(self):
@@ -95,3 +98,9 @@ class ForgetfulStorage(object):
         ikeys = self.data.iterkeys()
         ivalues = imap(operator.itemgetter(1), self.data.itervalues())
         return izip(ikeys, ivalues)
+
+    def decrementTTL(self):
+        for k, v in self.iteritems():
+            self.log.debug("TTL is now %i" % (v[3]-1))
+            v[3] -= 1
+        self.cull()
