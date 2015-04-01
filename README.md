@@ -103,6 +103,22 @@ The hash table should also handle time stamped values better. If a node is separ
 
 The ideal level of replication inside Kademlia still needs to be determined. This should be based on how likely a node is to go down (how long does an average user keep a chat application up), how often do we want to republish values to the table (every 5 - 10 minutes maybe), and what level of reliability is desired. This feels like it should be independent of the number of users but doing a quick statistical analysis might be interesting.
 
+-Current Progress on Kademlia Improvements-
+
+For part two of the project a place holder security implementation was added. It provides no true security but mirrors what we belive to be a workable design for table security. Every value which is entered into the table has a sequence number/timestamp assigned to it as discussed above. Encryption is used to protect these keys from malicious users.
+
+Each user generates two key pairs when they first joining the system. The first private/public key pair is used to secure their contact information and is not made widely available, only desired contacts should have access to the public key. Without this key it should not be possible to decrypt a user's IP/port.
+
+The second key pair is used to secure the sequence numbers of any values a user places into the table. When a user creates a new value in the table they add the value itself, an encrypted version of the sequence number, the key required to decrypt the sequence number, and a TTL counter which is discussed below. Currently a simple single key cypher is used which does not provide any meaningful security since any user may encrypt new sequence numbers using it. In the future this will be replaced with a two key system such as RSA. Any node receiving a store command will only store a value if the new sequence number's key matches the old sequence number, and the new sequence number is larger.
+
+This system will only protect values which are already in the table, a malicious user could wait for a legitimate user to be offline and replace their contact information with a different key. To make this much more difficult the location contact information is stored in the table changes over time. Every five minutes the contact information moves to a new location. The key used is deterministic, basically the user's ID followed by the current time rounded to the nearest five minutes, but the hash generated from these new keys is random. For a malicious user to hijack a legitimate users traffic for more than a few minutes they must determine a sequence of hash values and squat on all of them.
+
+This still does not stop a user from flooding the table with large numbers of garbage values but it does make it much harder to target specific users. Some sort of detection system might ignore users which spam too many store requests.
+
+Since the contact information keys are constantly changing old keys do not need to be kept, and in fact should be removed to decrease the chance of collisions. Kademlia is meant as a semi-permanent data store where values will persist for as long as they are accessed on a regular basis. This doesn't make sense for our system so each value has a very tight limit of 10 minutes for any given key/value pair. Unlike Kademlia which keeps count locally only this TTL is transferred across nodes during replication. Every minute each node will decrement the TTL counters and remove any which reach zero. A user is responsible for updating their contact information on a regular basis.
+
+-Other Work in Progress-
+
 We have a GUI to work with our chat client, and it does function to some extent. However there is still work to be done:
 - In order to deal with NAT traversal, we will poll the other nodes for our public ip/port. However, different nodes can see different IP/port pairs. We need to add in functionality to determine which IP/port pair will work when trying to communicate with another client.
 - The encryption scheme we use at present is very slow, and it halts the rest of the application. There are likely ways we can improve performance.
