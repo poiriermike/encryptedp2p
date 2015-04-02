@@ -69,10 +69,13 @@ class KademliaProtocol(RPCProtocol):
         self.router.addContact(source)
         #Check if the timestamp of any existing value is larger than the new one.
         existingValue = self.storage.get(key, None)
-        newTimestamp = decodeTimestamp(value[1], value[2])
         if existingValue:
-            existingTimestamp = decodeTimestamp(existingValue[1], value[2])
-        if (not existingValue) or (existingTimestamp < newTimestamp):
+            if existingValue[4] < value[4]:
+                existingTimestamp = decodeTimestamp(existingValue[1], value[2])
+            else:
+                self.log.debug("Local val unencrypted is too small")
+                return True
+        if (not existingValue) or (existingTimestamp < decodeTimestamp(value[1], value[2])):
             self.log.debug("got a store request from %s, storing value" % str(sender))
             self.storage[key] = value
             return True

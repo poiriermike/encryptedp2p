@@ -190,7 +190,7 @@ class Server(object):
 
         def store(nodes):
             self.log.info("setting '%s' on %s" % (key, map(str, nodes)))
-            ds = [self.protocol.callStore(n, dkey, [value, encodeTimestamp(str(timestamp), encryptionKey), encryptionKey,ttl]) for n in nodes]
+            ds = [self.protocol.callStore(n, dkey, [value, encodeTimestamp(str(timestamp), encryptionKey), encryptionKey,ttl, timestamp]) for n in nodes]
             return defer.DeferredList(ds).addCallback(self._anyRespondSuccess)
 
         node = Node(dkey)
