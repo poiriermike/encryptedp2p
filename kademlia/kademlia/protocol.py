@@ -86,7 +86,7 @@ class KademliaProtocol(RPCProtocol):
     def rpc_send(self, sender, message):
         self.log.info("Received message: \"" + message.strip("\n") + "\" from address " + str(sender))
         self.messages.append(message)
-	return True
+        return True
 
     def rpc_find_node(self, sender, nodeid, key):
         self.log.info("finding neighbors of %i in local table" % long(nodeid.encode('hex'), 16))
