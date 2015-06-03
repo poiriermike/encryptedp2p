@@ -154,20 +154,18 @@ class client_gui:
 
     # print givent text in the chat text window
     def chatWindowPrintText(self, text):
-        chatWindow.config(state=NORMAL)
-        chatWindow.insert(END, text)
-        chatWindow.config(state=DISABLED)
-        chatWindow.see(END)
+        self.chatWindow.config(state=NORMAL)
+        self.chatWindow.insert(END, text)
+        self.chatWindow.config(state=DISABLED)
+        self.chatWindow.see(END)
 
     # Hopefully temp way to clean up the newline in the text box after sending messages
     def clearText(self, event):
         if event.keysym == 'Return':
-            textEntry.delete('0.0', END)
+            self.textEntry.delete('0.0', END)
 
     #Send a message through the GUI chat
     def sendChatMessage(self, event):
-        global textEntry
-        global clientFactory
 
         if event.keysym == 'Return':
             selectedContact = self.updateSelectedContact()
@@ -182,8 +180,8 @@ class client_gui:
             if selectedIP is NONE or selectedPort is None:
                 return False
 
-            message = textEntry.get('0.0', END)
-            textEntry.delete('0.0', END)
+            message = self.textEntry.get('0.0', END)
+            self.textEntry.delete('0.0', END)
 
             message = message.lstrip()
             if message != "":
@@ -238,9 +236,6 @@ class client_gui:
 
     #Set up the GUI and containers, frames, lists, etc. before running the program loop
     def initializeGUI(self):
-        #global ConnectionsList
-        global chatWindow
-        global textEntry
         #set up the main window
         root = Tk()
         root.title("Encrypted P2P Chat GUI")
@@ -264,11 +259,11 @@ class client_gui:
         scrollbar = Scrollbar(chatTextFrame)
         scrollbar.pack(side=RIGHT, fill=Y)
 
-        chatWindow = Text(chatTextFrame, height=8, state=DISABLED)
-        chatWindow.pack(side=LEFT, expand=YES, fill=BOTH)
+        self.chatWindow = Text(chatTextFrame, height=8, state=DISABLED)
+        self.chatWindow.pack(side=LEFT, expand=YES, fill=BOTH)
 
-        scrollbar.config(command=chatWindow.yview)
-        chatWindow.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.chatWindow.yview)
+        self.chatWindow.config(yscrollcommand=scrollbar.set)
 
         chatTextFrame.pack(expand=YES, fill=BOTH)
 
@@ -278,16 +273,16 @@ class client_gui:
         scrollbar2 = Scrollbar(chatEntryFrame)
         scrollbar2.pack(side=RIGHT, fill=Y)
 
-        textEntry = Text(chatEntryFrame, height=2)
-        textEntry.pack(side=LEFT, expand=YES, fill=BOTH)
+        self.textEntry = Text(chatEntryFrame, height=2)
+        self.textEntry.pack(side=LEFT, expand=YES, fill=BOTH)
 
-        scrollbar2.config(command=textEntry.yview)
+        scrollbar2.config(command=self.textEntry.yview)
 
         chatEntryFrame.pack(expand=YES, fill=BOTH)
 
         #Bind key events to method calls
-        textEntry.bind("<Key>", self.sendChatMessage)
-        textEntry.bind("<KeyRelease>", self.clearText)
+        self.textEntry.bind("<Key>", self.sendChatMessage)
+        self.textEntry.bind("<KeyRelease>", self.clearText)
 
 
         #set up buttons and their method calls
@@ -296,9 +291,6 @@ class client_gui:
 
         exitButton = Button(root, text="Exit Program", command=self.closeProgram)
         exitButton.pack(side=RIGHT)
-
-        #connectButton = Button(root, text="Connect", command=None)#connectToIP)
-        #connectButton.pack(side=RIGHT)
 
         return root
 
