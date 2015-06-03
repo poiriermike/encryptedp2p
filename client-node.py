@@ -170,10 +170,10 @@ class client_gui:
         global clientFactory
 
         if event.keysym == 'Return':
-            selectedContact = updateSelectedContact()
+            selectedContact = self.updateSelectedContact()
 
             if(selectedContact == None):
-                chatWindowPrintText("No Contact Selected\n")
+                self.chatWindowPrintText("No Contact Selected\n")
                 return False
 
             selectedIP = selectedContact['ip']
@@ -187,16 +187,9 @@ class client_gui:
 
             message = message.lstrip()
             if message != "":
-                chatWindowPrintText("Me: "+message)
+                self.chatWindowPrintText("Me: "+message)
                 log.msg("Client Send: " + message)
                 server.sendMessage(username + ": " + message, selectedIP, selectedPort)
-
-    # Takes the result from the DHT and parses out the IP and port
-    # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
-    def get_contact_location(self, result, contact):
-        if result is not None and result != []:
-            contact['ip'] = result[0][0]
-            contact['port'] = result[0][1]
 
     # Refreshes the IPs of all of the contacts. Because of async nature of Twisted, this may not show right away.
     def refreshAvailIP(self):
@@ -209,8 +202,8 @@ class client_gui:
                 addCallback(get_contact_location, contact)
 
         #clear the listboxes in the GUI of old values
-        ConnectionsList[0].delete(0, END)
-        ConnectionsList[1].delete(0, END)
+        self.ConnectionsList[0].delete(0, END)
+        self.ConnectionsList[1].delete(0, END)
 
         for contact in Contacts:
             contactName = contact['username']
@@ -219,14 +212,14 @@ class client_gui:
                 contactIP = "Offline"
 
             # add the new values to the GUI
-            ConnectionsList[0].insert(END, contactName)
-            ConnectionsList[1].insert(END, contactIP)
+            self.ConnectionsList[0].insert(END, contactName)
+            self.ConnectionsList[1].insert(END, contactIP)
 
     # update the global selected IP address
     def updateSelectedContact(self):
 
-        selectedName = ConnectionsList[0].get(ACTIVE)
-        selectedIP = ConnectionsList[1].get(ACTIVE)
+        selectedName = self.ConnectionsList[0].get(ACTIVE)
+        selectedIP = self.ConnectionsList[1].get(ACTIVE)
 
         for contact in Contacts:
             if contact['ip'] == selectedIP and contact['username'] == selectedName:
@@ -237,15 +230,15 @@ class client_gui:
     def syncListSelections(self, evt=None, listIndex=0):
 
         otherindex = (listIndex +1) % 2
-        toset = ConnectionsList[listIndex].curselection()
-        ConnectionsList[otherindex].activate(toset[0])
+        toset = self.ConnectionsList[listIndex].curselection()
+        self.ConnectionsList[otherindex].activate(toset[0])
 
     def closeProgram(self):
         reactor.stop()
 
     #Set up the GUI and containers, frames, lists, etc. before running the program loop
     def initializeGUI(self):
-        global ConnectionsList
+        #global ConnectionsList
         global chatWindow
         global textEntry
         #set up the main window
@@ -262,8 +255,8 @@ class client_gui:
         self.ConnectionsList[0].grid(row=0, column=0)
         self.ConnectionsList[1].grid(row=0, column=1)
 
-        self.ConnectionsList[0].bind("<<ListboxSelect>>", lambda e:syncListSelections(e, listIndex=0))
-        self.ConnectionsList[1].bind("<<ListboxSelect>>", lambda e:syncListSelections(e, listIndex=1))
+        self.ConnectionsList[0].bind("<<ListboxSelect>>", lambda e:self.syncListSelections(e, listIndex=0))
+        self.ConnectionsList[1].bind("<<ListboxSelect>>", lambda e:self.syncListSelections(e, listIndex=1))
 
         #set up chat window with scroll bar
         chatTextFrame = Frame(root)
@@ -330,7 +323,12 @@ def pollForMessage():
             log.msg("Server Recieved: " + message)
             gui.chatWindowPrintText(message)
 
-
+# Takes the result from the DHT and parses out the IP and port
+# TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
+def get_contact_location(result, contact):
+    if result is not None and result != []:
+        contact['ip'] = result[0][0]
+        contact['port'] = result[0][1]
 
 #Will automatically refresh the contacts every minute
 if args.refresh:
