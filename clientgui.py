@@ -1,25 +1,12 @@
 __author__ = 'robert'
 
-#Begin GUI code
-
-from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Protocol
-
 from twisted.internet import protocol, reactor, stdio
-from twisted.protocols import basic
-from kademlia.network import Server
-
 try: #python 2
     from Tkinter import *
 except ImportError: #python 3
     from tkinter import *
 
 class client_gui:
-    # list boxes in GUI for displaying and selecting contact info
-    #ConnectionsList = []
-
-    #chatWindow = NONE
-    #textEntry = NONE
-    #Contacts = NONE
 
     #class constructor
     def __init__(self, reactor, logger, server, contactlist):
