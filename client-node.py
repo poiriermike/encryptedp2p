@@ -136,11 +136,13 @@ updateInfo.start(300)
 # ----------------------------------------------------------------------------------------------------------------------
 #Begin GUI code
 
+from clientgui import client_gui
+
 from twisted.internet.protocol import Factory, ClientFactory, ServerFactory, Protocol
 
 from twisted.internet import protocol, reactor, stdio
 from twisted.protocols import basic
-
+"""
 class client_gui:
     # list boxes in GUI for displaying and selecting contact info
     ConnectionsList = []
@@ -293,8 +295,9 @@ class client_gui:
         exitButton.pack(side=RIGHT)
 
         return root
-
-gui = client_gui(reactor)
+"""
+gui = client_gui(reactor, log, server, Contacts)
+gui.set_username(username)
 
 #set up the gui root and connect it to the reactor
 if not args.nogui:
@@ -314,14 +317,14 @@ def pollForMessage():
         if message != "":
             log.msg("Server Recieved: " + message)
             gui.chatWindowPrintText(message)
-
+"""
 # Takes the result from the DHT and parses out the IP and port
 # TODO: This will have to be modified when we have to resolve multiple IP/PORT pairs for NAT etc.
 def get_contact_location(result, contact):
     if result is not None and result != []:
         contact['ip'] = result[0][0]
         contact['port'] = result[0][1]
-
+"""
 #Will automatically refresh the contacts every minute
 if args.refresh:
     contact_refresh_loop = task.LoopingCall(refreshAvailIP)
