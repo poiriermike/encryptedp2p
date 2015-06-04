@@ -1,4 +1,5 @@
 .idea
+virtualenv/kademlia/lib/python2.7/site-packages/*
 identity.txt
 contacts.txt
 *.pyc
