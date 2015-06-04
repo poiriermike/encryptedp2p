@@ -1,15 +1,10 @@
 import sys,os,socket,argparse
 # Uses local version of Kademlia
 sys.path.insert(0, "kademlia")
-from twisted.internet import reactor, tksupport, task
-from twisted.python import log
+from twisted.internet import reactor, task
 from twisted.internet.task import LoopingCall
+from twisted.python import log
 from kademlia.network import Server
-
-try: #python 2
-    from Tkinter import *
-except ImportError: #python 3
-    from tkinter import *
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Importing and file handling section
@@ -144,8 +139,7 @@ gui.set_username(username)
 
 #set up the gui root and connect it to the reactor
 if not args.nogui:
-    root = gui.initializeGUI()
-    tksupport.install(root)
+    gui.initializeGUI()
 
 # --------- gui interaction --------
 

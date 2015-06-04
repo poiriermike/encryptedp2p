@@ -1,6 +1,7 @@
 __author__ = 'robert'
 
-from twisted.internet import protocol, reactor, stdio
+from twisted.internet import protocol, reactor, stdio, tksupport
+
 try: #python 2
     from Tkinter import *
 except ImportError: #python 3
@@ -176,4 +177,4 @@ class client_gui:
         exitButton = Button(root, text="Exit Program", command=self.closeProgram)
         exitButton.pack(side=RIGHT)
 
-        return root
+        tksupport.install(root)
